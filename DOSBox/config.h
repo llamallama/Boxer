@@ -64,6 +64,10 @@ This means that this file has had too many modifications to be safely replaceabl
 	#define  C_DYNREC 1
 #endif
 //--End of modifications
+//--Added: enable generic dynrec on PowerPC (uses risc_ppc.h backend)
+#if defined(__ppc__) || defined(__ppc64__)
+	#define C_DYNREC 1
+#endif
 
 /* Define to 1 to enable floating point emulation */
 #define C_FPU 1

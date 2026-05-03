@@ -1,3 +1,17 @@
+This is a fork of Boxer's leopard_legacy branch with a third-party PowerPC
+dynrec JIT (patch-r4301.diff) backported into the embedded DOSBox tree.
+The Legacy Release configuration now produces a JIT-enabled PPC binary.
+
+The patch is jmarsh's PPC backend for DOSBox's core_dynrec, originally
+posted on Vogons and packaged with precompiled binaries by Dr. Cameron
+Kaiser on SourceForge:
+- https://www.vogons.org/viewtopic.php?f=32&t=65057
+- https://sourceforge.net/projects/dosbox-ppcjit/
+
+See PPC_JIT_NOTES.md for the integration details. Build instructions
+below are unchanged from Boxer.
+
+
 Some notes on building Boxer
 ============================
 
