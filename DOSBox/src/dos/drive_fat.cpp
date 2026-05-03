@@ -321,7 +321,7 @@ Bit32u fatDrive::getClusterValue(Bit32u clustNum) {
 
 	switch(fattype) {
 		case FAT12:
-			clustValue = *((Bit16u *)&fatSectBuffer[fatentoff]);
+			clustValue = var_read((Bit16u *)&fatSectBuffer[fatentoff]);
 			if(clustNum & 0x1) {
 				clustValue >>= 4;
 			} else {
@@ -329,10 +329,10 @@ Bit32u fatDrive::getClusterValue(Bit32u clustNum) {
 			}
 			break;
 		case FAT16:
-			clustValue = *((Bit16u *)&fatSectBuffer[fatentoff]);
+			clustValue = var_read((Bit16u *)&fatSectBuffer[fatentoff]);
 			break;
 		case FAT32:
-			clustValue = *((Bit32u *)&fatSectBuffer[fatentoff]);
+			clustValue = var_read((Bit32u *)&fatSectBuffer[fatentoff]);
 			break;
 	}
 
@@ -368,7 +368,7 @@ void fatDrive::setClusterValue(Bit32u clustNum, Bit32u clustValue) {
 
 	switch(fattype) {
 		case FAT12: {
-			Bit16u tmpValue = *((Bit16u *)&fatSectBuffer[fatentoff]);
+			Bit16u tmpValue = var_read((Bit16u *)&fatSectBuffer[fatentoff]);
 			if(clustNum & 0x1) {
 				clustValue &= 0xfff;
 				clustValue <<= 4;
@@ -380,14 +380,14 @@ void fatDrive::setClusterValue(Bit32u clustNum, Bit32u clustValue) {
 				tmpValue &= 0xf000;
 				tmpValue |= (Bit16u)clustValue;
 			}
-			*((Bit16u *)&fatSectBuffer[fatentoff]) = tmpValue;
+			var_write((Bit16u *)&fatSectBuffer[fatentoff], tmpValue);
 			break;
 			}
 		case FAT16:
-			*((Bit16u *)&fatSectBuffer[fatentoff]) = (Bit16u)clustValue;
+			var_write((Bit16u *)&fatSectBuffer[fatentoff], (Bit16u)clustValue);
 			break;
 		case FAT32:
-			*((Bit32u *)&fatSectBuffer[fatentoff]) = clustValue;
+			var_write((Bit32u *)&fatSectBuffer[fatentoff], clustValue);
 			break;
 	}
 	for(int fc=0;fc<bootbuffer.fatcopies;fc++) {
