@@ -111,11 +111,16 @@ Subsystems are batched so Phase 1 commits group naturally.
 | `include/dosbox.h` | 1 | merge | Keep Boxer's `#include "BXCoalface.h"` (BXCoalface `#define`s `E_Exit` to `boxer_die`, so the underlying declaration must stay hidden). Update the commented-out marker line to r4301's improved `GCC_ATTRIBUTE(noreturn)` form for documentation only. |
 | `include/setup.h` | 1 | take r4301 | Adds `getMin()`/`getMax()` accessors and changes `Prop_int::SetValue` from `void` to `bool`. No Boxer caller depends on the void return (verified by grep). |
 
-### src/cpu/ (1 file, 2 hunks)
+### src/cpu/ (1 file, 2 hunks)  ✓
 
 | File | Hunks | Decision | Rationale |
 |------|-------|----------|-----------|
-| `src/cpu/core_dyn_x86/dyn_fpu_dh.h` | 2 | _(pending)_ | |
+| `src/cpu/core_dyn_x86/dyn_fpu_dh.h` | 2 | take r4301 | r4301 dropped two dead `//Bitu group=...` comments. Pure cleanup. |
+
+**Scope note:** the `src/cpu/` lift deliberately excludes `core_dynrec/` and
+`core_dynrec.cpp`. Those carry the JIT-on-0.74 backport from `da37579d` and
+will be reset wholesale when Phase 2 re-applies `patch-r4301.diff`. Touching
+them now would scramble the per-commit story.
 
 ### src/dos/ (8 files, 25 hunks)
 
@@ -130,11 +135,11 @@ Subsystems are batched so Phase 1 commits group naturally.
 | `src/dos/drive_local.cpp` | 5 | _(pending)_ | |
 | `src/dos/drives.h` | 1 | _(pending)_ | |
 
-### src/ (root, 1 file, 1 hunk)
+### src/ (root, 1 file, 1 hunk)  ✓
 
 | File | Hunks | Decision | Rationale |
 |------|-------|----------|-----------|
-| `src/dosbox.cpp` | 1 | _(pending)_ | |
+| `src/dosbox.cpp` | 1 | take r4301 | r4301 expanded the `midiconfig` `Set_help` text (mentions `find the id/name with mixer/listmidi`). Pure docstring improvement. |
 
 ### src/gui/ (1 file, 8 hunks)
 
@@ -158,12 +163,12 @@ Subsystems are batched so Phase 1 commits group naturally.
 | `src/hardware/tandy_sound.cpp` | 3 | _(pending)_ | **load-bearing** — `f4935f44` PPC fix lives here |
 | `src/hardware/vga_draw.cpp` | 4 | _(pending)_ | |
 
-### src/ints/ (2 files, 2 hunks)
+### src/ints/ (2 files, 2 hunks)  ✓
 
 | File | Hunks | Decision | Rationale |
 |------|-------|----------|-----------|
-| `src/ints/bios_keyboard.cpp` | 1 | _(pending)_ | |
-| `src/ints/int10_char.cpp` | 1 | _(pending)_ | |
+| `src/ints/bios_keyboard.cpp` | 1 | keep Boxer | Boxer commented out the `#if SDL_VERSION_ATLEAST(1, 2, 14)` block and unconditionally `#define CAN_USE_LOCK 1` because Boxer doesn't use SDL. r4301's bare `#endif` would close a `#if` that no longer exists. Drop r4301's `#endif` and the unused-on-Boxer comment about lower-SDL-version handling. |
+| `src/ints/int10_char.cpp` | 1 | take r4301 | r4301 has a clearer comment about mode 6 vs INT 10h fn 09h. Same logic, better wording. |
 
 ### src/misc/ (1 file, 3 hunks)
 
