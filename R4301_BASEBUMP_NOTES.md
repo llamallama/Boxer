@@ -141,11 +141,11 @@ them now would scramble the per-commit story.
 |------|-------|----------|-----------|
 | `src/dosbox.cpp` | 1 | take r4301 | r4301 expanded the `midiconfig` `Set_help` text (mentions `find the id/name with mixer/listmidi`). Pure docstring improvement. |
 
-### src/gui/ (1 file, 8 hunks)
+### src/gui/ (1 file, 8 hunks)  ✓
 
 | File | Hunks | Decision | Rationale |
 |------|-------|----------|-----------|
-| `src/gui/midi.cpp` | 8 | _(pending)_ | likely heavy: r4301 added new MIDI infra; Boxer has CoreMIDI hooks |
+| `src/gui/midi.cpp` | 8 | merge | Boxer disables all DOSBox-internal MIDI handling and routes through `BXCoalfaceAudio` (`boxer_sendMIDIMessage`, `boxer_sendMIDISysex`, `boxer_suggestMIDIHandler`). H1: keep Boxer's `#include "BXCoalfaceAudio.h"`. H2: keep Boxer's commented-out MIDI driver includes (BXCoalface replaces them entirely). H3: take r4301's `DB_Midi midi;` global (the struct definition moved to the new `include/midi.h`). H4: take r4301 (whitespace). H5: keep Boxer (`boxer_sendMIDISysex` instead of `midi.handler->PlaySysex`). H6: keep Boxer's "Colonel's Bequest" sysex-delay-clamp fix (`if (midi.sysex.delay < 40) midi.sysex.delay = 40`). H7: take r4301 (`static_cast<int>` for the printf format). H8: keep Boxer's `boxer_suggestMIDIHandler` call, the disabled-sysex-delay-parsing block, and the `goto getdefault` short-circuit. Adopting `include/midi.h` is mandatory (defines `DB_Midi`). |
 
 ### src/hardware/ (12 files, 28 hunks)  ✓
 
@@ -183,12 +183,12 @@ build-cycle 1 prep.
 |------|-------|----------|-----------|
 | `src/misc/setup.cpp` | 3 | take r4301 | All three hunks are r4301 cleanups. H1: `Bitu val` → `Bit32u value` (64-bit safety: `%u` matches uint32, not Bitu which can be 64-bit). H2/H3: whitespace tweaks in the help-text formatter. |
 
-### src/shell/ (2 files, 6 hunks)
+### src/shell/ (2 files, 6 hunks)  ✓
 
 | File | Hunks | Decision | Rationale |
 |------|-------|----------|-----------|
-| `src/shell/shell.cpp` | 3 | _(pending)_ | |
-| `src/shell/shell_cmds.cpp` | 3 | _(pending)_ | |
+| `src/shell/shell.cpp` | 3 | merge | H1 (/INIT): keep Boxer's `boxer_autoexecDidStart()` / `boxer_autoexecDidFinish()` hooks; drop r4301's startup-banner branch (Boxer doesn't show DOSBox's welcome text — surrounding Boxer UI handles user-facing notification). H2/H3 (cmdline mount logic): structurally divergent — r4301 added a `while (FindCommand(dummy++, line) && !command_found)` loop with `continue` for retries, Boxer had a single-shot `if (FindCommand(1, line))` with `goto nomount`. Resolved by taking r4301's loop structure and threading Boxer's physfs-source check (`line.find(':')` for `archive.zip:internal/path` paths) into the top of the loop body, plus moving Boxer's `.ZIP`/`.7Z` PHYSFS detection from a `goto nomount` to `command_found = true; continue;`. The `nomount:` label is dropped entirely (no remaining `goto`). |
+| `src/shell/shell_cmds.cpp` | 3 | merge | H1 (CD): keep Boxer's DWIM behavior — when given `cd D:\path`, Boxer changes to drive D first then `cd` to the path. r4301's "drive not found / illegal path" hint UX is dropped (Boxer doesn't ship the new `SHELL_EXECUTE_DRIVE_NOT_FOUND` / `SHELL_CMD_CHDIR_HINT` strings anyway). H2 (DIR): take both — r4301's new sort flags (`/ON`, `/OD`, `/OE`, `/OS`, `/A-D` + `reverseSort`) **and** Boxer's commented-out unrecognised-switch-bailout (preserves unix/style/paths support). H3 (COPY): keep Boxer's `*/` closing the comment block opened earlier in the function; take r4301's slightly cleaner `Gather all sources` comment text. |
 
 ### Auto-merged (33 files, no conflicts but worth a glance)
 
@@ -225,13 +225,13 @@ stub. Cross-check `4a85221c` for prior art.
 
 | File | Mainline (`4a85221c`) | This branch | Rationale |
 |------|----------------------|-------------|-----------|
-| `include/midi.h` | _(tbd)_ | _(tbd)_ | New MIDI header — referenced by r4301 `src/gui/midi.cpp` rewrite |
-| `include/pci_bus.h` | _(tbd)_ | _(tbd)_ | Header for new PCI bus emulation |
-| `src/cpu/core_dyn_x86/risc_x64.h` | _(tbd)_ | _(tbd)_ | x86_64 dynrec backend; not used by PPC build, may be wanted for x86_64 |
-| `src/cpu/core_dynrec/risc_armv8le.h` | _(tbd)_ | _(tbd)_ | ARMv8 dynrec backend; never built on a Boxer arch — drop or keep dormant |
+| `include/midi.h` | _(tbd)_ | accept ✓ | Defines `DB_Midi` struct (which `src/gui/midi.cpp` H3 declares as `extern DB_Midi midi;`). Mandatory. |
+| `include/pci_bus.h` | _(tbd)_ | defer | Boxer's hardware/ tree didn't reference PCI symbols — checked by grep. Phase 1 doesn't need it. If Phase 2 / build cycle 1 reveals a missing reference, bring in alongside `pci_bus.cpp` and `pci_devices.h`. |
+| `src/cpu/core_dyn_x86/risc_x64.h` | _(tbd)_ | defer | x86_64 dynrec backend; only used when building for x86_64. Boxer's Legacy Release config builds i386 + ppc + (x86_64?) — verify during build cycle 1. If the x86_64 arch needs it, lift it then. |
+| `src/cpu/core_dynrec/risc_armv8le.h` | _(tbd)_ | defer | ARMv8 dynrec backend; never built on any Boxer arch. Skip. |
 | `src/dos/drive_overlay.cpp` | _(tbd)_ | accept ✓ | r4301's `Overlay_Drive` class is referenced from `dos_programs.cpp` H4 (`MOUNT -t overlay`). Either accept or strip the overlay branch. Accepted to preserve r4301's feature surface — Boxer users can ignore it but it shouldn't be cut. Needs adding to `Boxer.xcodeproj`. |
-| `src/hardware/pci_bus.cpp` | _(tbd)_ | _(tbd)_ | New PCI bus emulation |
-| `src/hardware/pci_devices.h` | _(tbd)_ | _(tbd)_ | PCI device IDs |
+| `src/hardware/pci_bus.cpp` | _(tbd)_ | defer | No references in Boxer's hardware/ tree (grep clean). Skip until needed. |
+| `src/hardware/pci_devices.h` | _(tbd)_ | defer | Same as above. |
 | `src/hardware/mame/emu.h` | _(tbd)_ | accept ✓ | Header-only compat shim required by all the chip emulators below. Brought in with the hardware/ batch. |
 | `src/hardware/mame/fmopl.{cpp,h}` | _(tbd)_ | accept ✓ | MAME OPL2/3 — `adlib.cpp` references `MAMEOPL2/3::Handler`. Mandatory for link. |
 | `src/hardware/mame/saa1099.{cpp,h}` | _(tbd)_ | accept ✓ | MAME SAA1099 (Game Blaster / CMS) — `gameblaster.cpp` likely switched to it. Brought in for completeness; verify use during build cycle 1. |
