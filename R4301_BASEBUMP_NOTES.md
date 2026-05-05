@@ -103,13 +103,13 @@ result. Reachable for reference via the commit hash regardless.
 Conflict-resolution decisions go in the "Decision" column as we work each one.
 Subsystems are batched so Phase 1 commits group naturally.
 
-### include/ (3 files, 3 hunks)
+### include/ (3 files, 3 hunks)  ✓
 
 | File | Hunks | Decision | Rationale |
 |------|-------|----------|-----------|
-| `include/dma.h` | 1 | _(pending)_ | |
-| `include/dosbox.h` | 1 | _(pending)_ | |
-| `include/setup.h` | 1 | _(pending)_ | |
+| `include/dma.h` | 1 | take r4301 | r4301 made `dma_wrapping` `static` in dma.cpp and exposed `DMA_SetWrapping(Bitu)` as the public API. Boxer's hardware/dma.cpp already defines `DMA_SetWrapping`, so the header just lines up with what r4301 expects. The dma.cpp conflict in the hardware batch will need Boxer's `Bit32u dma_wrapping` made `static` to match. |
+| `include/dosbox.h` | 1 | merge | Keep Boxer's `#include "BXCoalface.h"` (BXCoalface `#define`s `E_Exit` to `boxer_die`, so the underlying declaration must stay hidden). Update the commented-out marker line to r4301's improved `GCC_ATTRIBUTE(noreturn)` form for documentation only. |
+| `include/setup.h` | 1 | take r4301 | Adds `getMin()`/`getMax()` accessors and changes `Prop_int::SetValue` from `void` to `bool`. No Boxer caller depends on the void return (verified by grep). |
 
 ### src/cpu/ (1 file, 2 hunks)
 
@@ -239,9 +239,9 @@ upstream rewrote the surrounding code.
       `src/dos/drive_fat.cpp`)
 - [ ] `9456f8cf` — MT-32 endianness fix
 - [ ] `f4935f44` — Tandy / CGA endianness fix
-- [ ] `Segs::val[]` declared as `Bit16u[8]` in `include/regs.h`. PPC_JIT_NOTES
-      says upstream fixed this in 2018; r4301 may already have it. Verify
-      rather than assume.
+- [x] `Segs::val[]` declared as `Bit16u[8]` in `include/regs.h`. **r4301
+      already has the upstream fix** — confirmed by direct inspection. No
+      manual carry-over needed; the include/ batch lift picks it up for free.
 
 ## Build cycle log
 
@@ -258,3 +258,5 @@ Append-only log of load-bearing decisions made during the work. One line each.
 - 2026-05-04 — `patch-r4301.diff` at `fe7b1960` is bit-equivalent to whatever produced `~/repos/dosbox_r4301_patched`. Use the in-repo patch as authoritative.
 - 2026-05-04 — Sandbox repo at `~/repos/r4301-merge-sandbox` is the canonical merge workspace. `boxer-074` overlays Boxer's `DOSBox/` on vanilla-074 *without* `--delete` so vanilla files Boxer doesn't track (Makefile.am, autogen.sh, etc.) stay in place — keeps the merge from raising spurious "deleted by us" conflicts.
 - 2026-05-04 — `~/repos/dosbox_r4301`'s VERSION reads `0.74-2`; this is just trunk's unbumped string at r4301 (per `svn co -r4301 trunk`), not a tree mismatch.
+- 2026-05-04 — Phase 1 commit strategy: per-subsystem commits in `boxer-ppcjit` are produced by `rsync -a --existing` from sandbox into `DOSBox/<subsystem>/`. New-in-r4301 files are deferred to their own commits when their consumers land. Intermediate commits are not individually buildable; build cycle 1 only fires after the final Phase 1 commit. This keeps `git log --oneline` legible at the cost of mid-bump compile-broken states.
+- 2026-05-04 — `Segs::val[]` PPC fix already present in r4301 upstream — no manual carry-over needed.
