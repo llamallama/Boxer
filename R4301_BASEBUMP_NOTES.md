@@ -122,18 +122,18 @@ Subsystems are batched so Phase 1 commits group naturally.
 will be reset wholesale when Phase 2 re-applies `patch-r4301.diff`. Touching
 them now would scramble the per-commit story.
 
-### src/dos/ (8 files, 25 hunks)
+### src/dos/ (8 files, 25 hunks)  ✓
 
 | File | Hunks | Decision | Rationale |
 |------|-------|----------|-----------|
-| `src/dos/cdrom_image.cpp` | 1 | _(pending)_ | |
-| `src/dos/dos_memory.cpp` | 2 | _(pending)_ | |
-| `src/dos/dos_programs.cpp` | 8 | _(pending)_ | likely heavy: imgmount, mount, etc. |
-| `src/dos/drive_cache.cpp` | 3 | _(pending)_ | |
-| `src/dos/drive_fat.cpp` | 3 | merge ✓ | All three conflicts: keep Boxer's coalface byteswap **and** r4301's new code, in the right order. Hunk 1 (boot sector): r4301 added a new floppy-format-detection block that reads `bootbuffer.nearjmp/mediadescriptor/oemname` directly — Boxer's `boxer_FATBootstrapLittleToHost(bootbuffer)` call must run *before* this block so the new code sees host-endian fields on PPC. Hunks 2+3 (directoryChange / addDirectoryEntry writes): r4301 added a `writeSector(sectnum, data)` helper that wraps the absolute-vs-CHS distinction. Use the helper, but keep Boxer's `boxer_FATDirEntryHostToLittle` byteswap before the write. All six Boxer coalface call sites (lines 737, 781, 1110, 1222, 1266, 1313 in the merged file) present and correct. |
-| `src/dos/drive_iso.cpp` | 2 | _(pending)_ | |
-| `src/dos/drive_local.cpp` | 5 | _(pending)_ | |
-| `src/dos/drives.h` | 1 | _(pending)_ | |
+| `src/dos/cdrom_image.cpp` | 1 | take r4301 | r4301 added a member-initializer list (`:subUnit(subUnit)`) and renamed param from `_subUnit` to `subUnit`. Auto-merge took Boxer's `images[_subUnit] = this;` body line, leaving an inconsistent param/body name pair. Resolved by taking r4301's signature and fixing the body to `images[subUnit]` to match. |
+| `src/dos/dos_memory.cpp` | 2 | keep Boxer | Boxer made `callbackhandler` a function-local instead of a static global, to avoid `CALLBACK_HandlerObject.Allocate` failing with "already-installed" on shutdown-and-restart. Keep both Boxer hunks (the comment block above and the local declaration). |
+| `src/dos/dos_programs.cpp` | 8 | merge | H1/H7 (MOUNT/IMGMOUNT `-u` unmount): keep Boxer's inline form (preserves `boxer_driveDidUnmount(i_drive)`); skip r4301's `UnmountHelper(...)` refactor since it would drop the boxer notification. H2: take both — r4301's `path_relative_to_last_config` resolution **and** Boxer's `is_physfs` detection. H3: `if (!is_physfs && !S_ISDIR(test.st_mode))` — Boxer's physfs guard with r4301's macro. H4: combine — `if (type == "overlay") { ...Overlay_Drive... } else if (is_physfs) { ...physfsDrive... } else { ...localDrive... }`. Requires `getBasedir()` from drives.h batch (already in) and accepting `drive_overlay.cpp`. H5: take r4301 (`dirCache.SetLabel(...)` direct access). H6: take both — r4301's `incrementFDD()` and Boxer's `boxer_driveDidMount(...)`. H8: keep Boxer's `boxer_driveDidMount(...)` call; take r4301's spelling fix (`be careful` for `becareful`). |
+| `src/dos/drive_cache.cpp` | 3 | merge | H1: `SetBaseDir(basePath, drive)` — the merged `dos_system.h` declares the 2-arg version, so use that. Drop `free[i] = true` loop (the `free[]` member is no longer in DOS_Drive_Cache). H2: take Boxer (matches Boxer's 3-arg `GetShortName(dirpath, filename, shortname)` signature, which the auto-merge already kept above the conflict). Simplified Boxer's body slightly (removed the printf debug lines and the dead binary-search comment block). H3: take Boxer (`drive->opendir(...)` / `drive->closedir(...)` matches the merged DOS_Drive_Cache API which has a `drive` member for dispatching directory access through the drive's overrides — required for `physfsDrive`). |
+| `src/dos/drive_fat.cpp` | 3 | merge ✓ | (covered in earlier commit `8cce05c1`) |
+| `src/dos/drive_iso.cpp` | 2 | merge | Same auto-merge param-name issue as cdrom_image.cpp. H1: keep Boxer's signature (`letter`, `name`, `_mediaid`) so the body compiles unchanged, but adopt r4301's member-initializer list (initializes `iso/dataCD/mediaid/subUnit/driveLetter` early). H2: keep Boxer's signature (`letter`, `_subUnit`); add r4301's missing line `_subUnit = MSCDEX_GetSubUnit(letter);` — that's a real bug fix Boxer was missing (without it, `UpdateMscdex` for an existing drive uses whatever subUnit the caller passed instead of the actual current subUnit). |
+| `src/dos/drive_local.cpp` | 5 | merge | H1: take r4301 — drop the inline `class localFile` declaration (r4301 moved it to `include/dos_system.h`, which is already in via the merged header). H2: take both — Boxer's `boxer_shouldAllowWriteAccessToPath` permission check **and** r4301's `fopen_wrap` helper (instead of plain `fopen`). H3: take both — Boxer's permission check, then r4301's "flush handles" block (Betrayal in Antara fix), then `fopen_wrap`. H4: take both methods — `localFile::Flush()` from r4301 and `localFile::willBecomeUnavailable()` from Boxer (independent additions). H5: keep Boxer's signature (`letter` param) so the body compiles; adopt r4301's member-initializer list (`subUnit(0), driveLetter('\0')`). |
+| `src/dos/drives.h` | 1 | merge | r4301 moved `GetLabel/SetLabel/EmptyCache` to the `DOS_Drive` base class in `include/dos_system.h` (already in via the merged header) and added `getBasedir()`. Boxer kept those overrides on `localDrive` plus added `opendir/closedir/read_directory_first/read_directory_next` (needed for `physfsDrive` polymorphic override) and `getShortName`. Keep Boxer's full set of `localDrive` declarations and add r4301's `getBasedir()` accessor. |
 
 ### src/ (root, 1 file, 1 hunk)  ✓
 
@@ -229,7 +229,7 @@ stub. Cross-check `4a85221c` for prior art.
 | `include/pci_bus.h` | _(tbd)_ | _(tbd)_ | Header for new PCI bus emulation |
 | `src/cpu/core_dyn_x86/risc_x64.h` | _(tbd)_ | _(tbd)_ | x86_64 dynrec backend; not used by PPC build, may be wanted for x86_64 |
 | `src/cpu/core_dynrec/risc_armv8le.h` | _(tbd)_ | _(tbd)_ | ARMv8 dynrec backend; never built on a Boxer arch — drop or keep dormant |
-| `src/dos/drive_overlay.cpp` | _(tbd)_ | _(tbd)_ | New overlay drive feature; user-facing, decide whether Boxer wants it |
+| `src/dos/drive_overlay.cpp` | _(tbd)_ | accept ✓ | r4301's `Overlay_Drive` class is referenced from `dos_programs.cpp` H4 (`MOUNT -t overlay`). Either accept or strip the overlay branch. Accepted to preserve r4301's feature surface — Boxer users can ignore it but it shouldn't be cut. Needs adding to `Boxer.xcodeproj`. |
 | `src/hardware/pci_bus.cpp` | _(tbd)_ | _(tbd)_ | New PCI bus emulation |
 | `src/hardware/pci_devices.h` | _(tbd)_ | _(tbd)_ | PCI device IDs |
 | `src/hardware/mame/emu.h` | _(tbd)_ | accept ✓ | Header-only compat shim required by all the chip emulators below. Brought in with the hardware/ batch. |
