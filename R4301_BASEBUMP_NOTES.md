@@ -45,15 +45,25 @@ result. Reachable for reference via the commit hash regardless.
 
 ## Phase plan
 
-### Phase 0 — sandbox
+### Phase 0 — sandbox  ✓
 
-- [ ] Stand up a throwaway git repo (location TBD, outside this tree) with
-      three branches off a `vanilla-074` initial commit:
-      - `vanilla-r4301` — `~/repos/dosbox_r4301` contents
-      - `boxer-074` — `~/repos/Boxer/DOSBox/` contents
-- [ ] `git merge boxer-074` into `vanilla-r4301`. Capture conflict list.
-- [ ] Confirm `~/repos/dosbox_r4301` vs `~/repos/dosbox_r4301_patched` matches
-      the `patch-r4301.diff` committed at `fe7b1960`. Avoids surprises.
+- [x] Sandbox repo at `~/repos/r4301-merge-sandbox` with three branches off
+      `vanilla-074` initial commit:
+      - `vanilla-r4301` — `~/repos/dosbox_r4301` contents (excluding `.svn`)
+      - `boxer-074` — `~/repos/Boxer/DOSBox/` contents overlaid on vanilla-074
+        (no `--delete`, so vanilla files Boxer doesn't track stay in place;
+        keeps the merge from seeing "boxer deleted Makefile.am" as a conflict
+        against r4301's edits to those files)
+- [x] `git merge boxer-074` into `vanilla-r4301` ran. Result: 30 conflicted
+      files (73 conflict hunks total), 33 auto-merged, 7 added-by-Boxer,
+      no rename detection issues. Sandbox is left in pre-commit conflicted
+      state so individual conflicts can be inspected with `git diff` and
+      `git mergetool`. Do not commit the merge in the sandbox — it is a
+      scratchpad, not authoritative output.
+- [x] Confirmed: `patch -p0 < patch-r4301.diff` against vanilla r4301
+      produces a tree identical (modulo build artifacts and user noise:
+      `.o`, `.deps`, `Makefile`, `Makefile.in`, `.DS_Store`, `.claude`) to
+      `~/repos/dosbox_r4301_patched`. The patch file in the repo is bit-good.
 
 ### Phase 1 — forward-port Boxer mods onto r4301 (no JIT)
 
@@ -89,26 +99,134 @@ result. Reachable for reference via the commit hash regardless.
 
 ## Phase 0 conflict queue
 
-Populated after the 3-way merge runs. Each row: file, conflict shape, decision,
-rationale.
+30 files with merge conflicts; 73 hunks total. Hunk counts in parens.
+Conflict-resolution decisions go in the "Decision" column as we work each one.
+Subsystems are batched so Phase 1 commits group naturally.
 
-| File | Shape | Decision | Rationale |
+### include/ (3 files, 3 hunks)
+
+| File | Hunks | Decision | Rationale |
 |------|-------|----------|-----------|
-| _(pending)_ | | | |
+| `include/dma.h` | 1 | _(pending)_ | |
+| `include/dosbox.h` | 1 | _(pending)_ | |
+| `include/setup.h` | 1 | _(pending)_ | |
+
+### src/cpu/ (1 file, 2 hunks)
+
+| File | Hunks | Decision | Rationale |
+|------|-------|----------|-----------|
+| `src/cpu/core_dyn_x86/dyn_fpu_dh.h` | 2 | _(pending)_ | |
+
+### src/dos/ (8 files, 25 hunks)
+
+| File | Hunks | Decision | Rationale |
+|------|-------|----------|-----------|
+| `src/dos/cdrom_image.cpp` | 1 | _(pending)_ | |
+| `src/dos/dos_memory.cpp` | 2 | _(pending)_ | |
+| `src/dos/dos_programs.cpp` | 8 | _(pending)_ | likely heavy: imgmount, mount, etc. |
+| `src/dos/drive_cache.cpp` | 3 | _(pending)_ | |
+| `src/dos/drive_fat.cpp` | 3 | _(pending)_ | **load-bearing** — Boxer FAT coalface vs r4301 endianness work |
+| `src/dos/drive_iso.cpp` | 2 | _(pending)_ | |
+| `src/dos/drive_local.cpp` | 5 | _(pending)_ | |
+| `src/dos/drives.h` | 1 | _(pending)_ | |
+
+### src/ (root, 1 file, 1 hunk)
+
+| File | Hunks | Decision | Rationale |
+|------|-------|----------|-----------|
+| `src/dosbox.cpp` | 1 | _(pending)_ | |
+
+### src/gui/ (1 file, 8 hunks)
+
+| File | Hunks | Decision | Rationale |
+|------|-------|----------|-----------|
+| `src/gui/midi.cpp` | 8 | _(pending)_ | likely heavy: r4301 added new MIDI infra; Boxer has CoreMIDI hooks |
+
+### src/hardware/ (12 files, 28 hunks)
+
+| File | Hunks | Decision | Rationale |
+|------|-------|----------|-----------|
+| `src/hardware/adlib.cpp` | 1 | _(pending)_ | r4301 switched to MAME OPL backend |
+| `src/hardware/dbopl.cpp` | 1 | _(pending)_ | |
+| `src/hardware/dma.cpp` | 3 | _(pending)_ | |
+| `src/hardware/gus.cpp` | 1 | _(pending)_ | |
+| `src/hardware/joystick.cpp` | 3 | _(pending)_ | |
+| `src/hardware/mixer.cpp` | 2 | _(pending)_ | |
+| `src/hardware/pcspeaker.cpp` | 1 | _(pending)_ | |
+| `src/hardware/serialport/nullmodem.cpp` | 2 | _(pending)_ | |
+| `src/hardware/serialport/softmodem.cpp` | 1 | _(pending)_ | |
+| `src/hardware/tandy_sound.cpp` | 3 | _(pending)_ | **load-bearing** — `f4935f44` PPC fix lives here |
+| `src/hardware/vga_draw.cpp` | 4 | _(pending)_ | |
+
+### src/ints/ (2 files, 2 hunks)
+
+| File | Hunks | Decision | Rationale |
+|------|-------|----------|-----------|
+| `src/ints/bios_keyboard.cpp` | 1 | _(pending)_ | |
+| `src/ints/int10_char.cpp` | 1 | _(pending)_ | |
+
+### src/misc/ (1 file, 3 hunks)
+
+| File | Hunks | Decision | Rationale |
+|------|-------|----------|-----------|
+| `src/misc/setup.cpp` | 3 | _(pending)_ | |
+
+### src/shell/ (2 files, 6 hunks)
+
+| File | Hunks | Decision | Rationale |
+|------|-------|----------|-----------|
+| `src/shell/shell.cpp` | 3 | _(pending)_ | |
+| `src/shell/shell_cmds.cpp` | 3 | _(pending)_ | |
+
+### Auto-merged (33 files, no conflicts but worth a glance)
+
+These auto-merged cleanly. Most should be fine, but git's auto-merge happily
+takes adjacent non-conflicting hunks from both sides — which can produce a
+syntactically valid file that does the wrong thing if the two sides were
+making coordinated changes. Worth a spot-check during Phase 1, especially
+for files where the auto-merged result references new-in-r4301 APIs.
+
+`include/dos_system.h`, `include/joystick.h`, `include/keyboard.h`,
+`include/timer.h`, `src/cpu/core_dyn_x86/cache.h`,
+`src/cpu/core_dyn_x86/decoder.h`, `src/cpu/core_dyn_x86/dyn_fpu.h`,
+`src/cpu/cpu.cpp`, `src/dos/cdrom.cpp`, `src/dos/dev_con.h`,
+`src/dos/dos.cpp`, `src/dos/dos_execute.cpp`,
+`src/dos/dos_keyboard_layout.cpp`, `src/dos/drive_virtual.cpp`,
+`src/dos/drives.cpp`, `src/fpu/fpu_instructions_x86.h`,
+`src/gui/render.cpp`, `src/hardware/hardware.cpp`,
+`src/hardware/iohandler.cpp`, `src/hardware/ipx.cpp`,
+`src/hardware/keyboard.cpp`, `src/hardware/opl.cpp`,
+`src/hardware/pic.cpp`, `src/hardware/serialport/directserial.cpp`,
+`src/hardware/serialport/misc_util.cpp`,
+`src/hardware/serialport/serialdummy.cpp`, `src/hardware/vga_other.cpp`,
+`src/hardware/vga_xga.cpp`, `src/ints/bios_disk.cpp`, `src/ints/ems.cpp`,
+`src/ints/mouse.cpp`, `src/misc/messages.cpp`, `src/misc/support.cpp`,
+`src/shell/shell_misc.cpp`.
 
 ## New-in-r4301 file triage
 
 Files added between 0.74 and r4301 that Boxer must explicitly accept, drop, or
 stub. Cross-check `4a85221c` for prior art.
 
+21 files added between 0.74 and r4301 under `include/` and `src/`. Cross-check
+`4a85221c` for prior art on each.
+
 | File | Mainline (`4a85221c`) | This branch | Rationale |
 |------|----------------------|-------------|-----------|
-| `src/cpu/core_dyn_x86/risc_x64.h` | _(tbd)_ | _(tbd)_ | x86_64-only; PPC build does not need it but i386/x86_64 builds may |
-| `src/cpu/core_dynrec/risc_armv8le.h` | _(tbd)_ | _(tbd)_ | ARMv8 backend; not built on any Boxer arch |
-| `src/dos/drive_overlay.cpp` | _(tbd)_ | _(tbd)_ | New overlay drive feature |
+| `include/midi.h` | _(tbd)_ | _(tbd)_ | New MIDI header — referenced by r4301 `src/gui/midi.cpp` rewrite |
+| `include/pci_bus.h` | _(tbd)_ | _(tbd)_ | Header for new PCI bus emulation |
+| `src/cpu/core_dyn_x86/risc_x64.h` | _(tbd)_ | _(tbd)_ | x86_64 dynrec backend; not used by PPC build, may be wanted for x86_64 |
+| `src/cpu/core_dynrec/risc_armv8le.h` | _(tbd)_ | _(tbd)_ | ARMv8 dynrec backend; never built on a Boxer arch — drop or keep dormant |
+| `src/dos/drive_overlay.cpp` | _(tbd)_ | _(tbd)_ | New overlay drive feature; user-facing, decide whether Boxer wants it |
 | `src/hardware/pci_bus.cpp` | _(tbd)_ | _(tbd)_ | New PCI bus emulation |
-| `src/hardware/pci_devices.h` | _(tbd)_ | _(tbd)_ | Header for above |
-| `src/hardware/mame/` | _(tbd)_ | _(tbd)_ | New mame-derived chip emulation directory |
+| `src/hardware/pci_devices.h` | _(tbd)_ | _(tbd)_ | PCI device IDs |
+| `src/hardware/mame/emu.h` | _(tbd)_ | _(tbd)_ | MAME compat shim for the new chip emulators below |
+| `src/hardware/mame/fmopl.{cpp,h}` | _(tbd)_ | _(tbd)_ | MAME OPL2/3 — `adlib.cpp` switched to it in r4301 |
+| `src/hardware/mame/saa1099.{cpp,h}` | _(tbd)_ | _(tbd)_ | MAME SAA1099 (Game Blaster / CMS) |
+| `src/hardware/mame/sn76496.{cpp,h}` | _(tbd)_ | _(tbd)_ | MAME SN76496 (Tandy / PCjr) — `tandy_sound.cpp` may switch to it |
+| `src/hardware/mame/ymdeltat.{cpp,h}` | _(tbd)_ | _(tbd)_ | MAME ADPCM-A helper, used by ymf262 |
+| `src/hardware/mame/ymf262.{cpp,h}` | _(tbd)_ | _(tbd)_ | MAME OPL3 |
+| `src/libs/zmbv/{makedll.mk,resource.rc,zmbv_mingw.def}` | n/a | drop | MinGW build artifacts, irrelevant to Xcode build |
 
 ## PPC-fix audit checklist
 
@@ -137,4 +255,6 @@ Each row: cycle number, what was sent, what was tested, outcome, follow-up.
 
 Append-only log of load-bearing decisions made during the work. One line each.
 
-- _(none yet)_
+- 2026-05-04 — `patch-r4301.diff` at `fe7b1960` is bit-equivalent to whatever produced `~/repos/dosbox_r4301_patched`. Use the in-repo patch as authoritative.
+- 2026-05-04 — Sandbox repo at `~/repos/r4301-merge-sandbox` is the canonical merge workspace. `boxer-074` overlays Boxer's `DOSBox/` on vanilla-074 *without* `--delete` so vanilla files Boxer doesn't track (Makefile.am, autogen.sh, etc.) stay in place — keeps the merge from raising spurious "deleted by us" conflicts.
+- 2026-05-04 — `~/repos/dosbox_r4301`'s VERSION reads `0.74-2`; this is just trunk's unbumped string at r4301 (per `svn co -r4301 trunk`), not a tree mismatch.
