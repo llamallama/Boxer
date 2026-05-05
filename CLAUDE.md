@@ -26,6 +26,12 @@ working Mac G4/G5 builds at r4301. Bugs encountered here are integration-side
 before proposing changes to JIT-related code.** Update it in the same turn you
 make a load-bearing decision — don't defer.
 
+A second workstream is now active: bumping the embedded DOSBox tree from 0.74
+to SVN r4301 so the JIT patch becomes a clean drop-in. **Read
+`R4301_BASEBUMP_NOTES.md` for the live phase plan, conflict queue, build-cycle
+log, and decisions.** Same update-in-the-same-turn rule applies. The base-bump
+work happens on the `r4301-basebump` branch.
+
 ## Working mode
 
 The user builds in a Snow Leopard VM (Xcode 3.2.x for the Legacy Release
