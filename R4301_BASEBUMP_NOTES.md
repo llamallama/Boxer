@@ -125,7 +125,7 @@ Subsystems are batched so Phase 1 commits group naturally.
 | `src/dos/dos_memory.cpp` | 2 | _(pending)_ | |
 | `src/dos/dos_programs.cpp` | 8 | _(pending)_ | likely heavy: imgmount, mount, etc. |
 | `src/dos/drive_cache.cpp` | 3 | _(pending)_ | |
-| `src/dos/drive_fat.cpp` | 3 | _(pending)_ | **load-bearing** — Boxer FAT coalface vs r4301 endianness work |
+| `src/dos/drive_fat.cpp` | 3 | merge ✓ | All three conflicts: keep Boxer's coalface byteswap **and** r4301's new code, in the right order. Hunk 1 (boot sector): r4301 added a new floppy-format-detection block that reads `bootbuffer.nearjmp/mediadescriptor/oemname` directly — Boxer's `boxer_FATBootstrapLittleToHost(bootbuffer)` call must run *before* this block so the new code sees host-endian fields on PPC. Hunks 2+3 (directoryChange / addDirectoryEntry writes): r4301 added a `writeSector(sectnum, data)` helper that wraps the absolute-vs-CHS distinction. Use the helper, but keep Boxer's `boxer_FATDirEntryHostToLittle` byteswap before the write. All six Boxer coalface call sites (lines 737, 781, 1110, 1222, 1266, 1313 in the merged file) present and correct. |
 | `src/dos/drive_iso.cpp` | 2 | _(pending)_ | |
 | `src/dos/drive_local.cpp` | 5 | _(pending)_ | |
 | `src/dos/drives.h` | 1 | _(pending)_ | |
@@ -234,9 +234,10 @@ These fixes are load-bearing for PPC and must survive the tree replacement.
 They live far from the patch hunks, so the merge can silently lose them if
 upstream rewrote the surrounding code.
 
-- [ ] `6995713f` — FAT image endianness / coalface helpers
-      (`BXCoalfaceDrives.{h,mm}` in `Boxer/`, plus call sites in
-      `src/dos/drive_fat.cpp`)
+- [x] `6995713f` — FAT image endianness / coalface helpers preserved in
+      drive_fat.cpp (six call sites). Coalface helpers themselves
+      (`BXCoalfaceDrives.{h,mm}`) are in `Boxer/`, not in `DOSBox/`, and
+      were not touched by this work.
 - [ ] `9456f8cf` — MT-32 endianness fix
 - [ ] `f4935f44` — Tandy / CGA endianness fix
 - [x] `Segs::val[]` declared as `Bit16u[8]` in `include/regs.h`. **r4301
