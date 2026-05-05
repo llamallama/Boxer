@@ -147,21 +147,28 @@ them now would scramble the per-commit story.
 |------|-------|----------|-----------|
 | `src/gui/midi.cpp` | 8 | _(pending)_ | likely heavy: r4301 added new MIDI infra; Boxer has CoreMIDI hooks |
 
-### src/hardware/ (12 files, 28 hunks)
+### src/hardware/ (12 files, 28 hunks)  ✓
 
 | File | Hunks | Decision | Rationale |
 |------|-------|----------|-----------|
-| `src/hardware/adlib.cpp` | 1 | _(pending)_ | r4301 switched to MAME OPL backend |
-| `src/hardware/dbopl.cpp` | 1 | _(pending)_ | |
-| `src/hardware/dma.cpp` | 3 | _(pending)_ | |
-| `src/hardware/gus.cpp` | 1 | _(pending)_ | |
-| `src/hardware/joystick.cpp` | 3 | _(pending)_ | |
-| `src/hardware/mixer.cpp` | 2 | _(pending)_ | |
-| `src/hardware/pcspeaker.cpp` | 1 | _(pending)_ | |
-| `src/hardware/serialport/nullmodem.cpp` | 2 | _(pending)_ | |
-| `src/hardware/serialport/softmodem.cpp` | 1 | _(pending)_ | |
-| `src/hardware/tandy_sound.cpp` | 3 | _(pending)_ | **load-bearing** — `f4935f44` PPC fix lives here |
-| `src/hardware/vga_draw.cpp` | 4 | _(pending)_ | |
+| `src/hardware/adlib.cpp` | 1 | take r4301 | mixerChan scale 2.0 → 1.5 with explanatory comment ("measured to be too high"). r4301 already references `MAMEOPL2/3::Handler` for `oplemu="mame"`, which makes accepting the new `mame/fmopl.{cpp,h}` and `mame/ymf262.{cpp,h}` files mandatory. |
+| `src/hardware/dbopl.cpp` | 1 | take r4301 | r4301 simplified the rounding correction to a single `guessAdd++`. |
+| `src/hardware/dma.cpp` | 3 | take r4301 | H1: `dma_wrapping` becomes `static` (matches `include/dma.h` change — public API is now `DMA_SetWrapping(Bitu)`). H2/H3: `sBitfs(x)` size format macro for 64-bit-safe `Bitu` printing. |
+| `src/hardware/gus.cpp` | 1 | **keep Boxer** | Boxer added a substantial `pantable[]` fix (~25-line block with comment): the upstream 0.74 code generated a panning table unrelated to the actual GUS panning register, locking GUS programs to mono. r4301 still has the broken upstream form. Boxer's fix is real and intentional — keep it. |
+| `src/hardware/joystick.cpp` | 3 | merge | H1: take r4301 (drop stray `// Store writetime index` comment). H2: take r4301 (whitespace alignment). H3: **keep Boxer** — Boxer commented out the static `if(timed)` handler-install branch and replaced with `gameport_timed = ...; ReadHandler.Install(0x201, read_p201_switchable, IO_MB);` so Boxer can toggle gameport timing at runtime. Also keeps Boxer's disabled `stick[0/1].enabled = false` init (Boxer sets these elsewhere). |
+| `src/hardware/mixer.cpp` | 2 | merge | H1: **keep Boxer** — `ShowVolume("MASTER", boxer_masterVolume(BXLeftChannel), boxer_masterVolume(BXRightChannel))` routes the master-volume display through Boxer's OS X mixer instead of `mixer.mastervol[]`. H2: take r4301 (`(Bit32u)obtained.freq` cast for 64-bit safety). |
+| `src/hardware/pcspeaker.cpp` | 1 | take r4301 | `fabsf(...)` instead of `(float)(fabs(...))` — avoids double promotion. |
+| `src/hardware/serialport/nullmodem.cpp` | 2 | take r4301 | H1: inner-shadow `Bits rxchar` declaration (semantically equivalent on this scope). H2: `control` instead of Boxer's `_control` — original upstream form; Boxer's `_` prefix was unconventional. |
+| `src/hardware/serialport/softmodem.cpp` | 1 | take r4301 | Whitespace tweak in a `while` loop. |
+| `src/hardware/tandy_sound.cpp` | 3 | take r4301 | H1: r4301 deleted ~70 lines of inline SN76496 register-handling code in `SN76496Write`; the SN76496 emulation moved to MAME's `mame/sn76496.{cpp,h}` (`device.write(data)` on line 78 dispatches to it). **Adopting `mame/sn76496.{cpp,h}` is mandatory** — without them this file won't link. H2/H3: whitespace (`data & 0xff` vs `data&0xff`). PPC_JIT_NOTES had this file flagged as the home of the `f4935f44` PPC fix; that was incorrect — the f4935f44 fix is in `vga_draw.cpp`, not here. |
+| `src/hardware/vga_draw.cpp` | 4 | merge | **load-bearing — `f4935f44` PPC fix lives here.** H1 (CGA composite output): take r4301's improved algorithm but keep Boxer's `CFSwapInt32HostToLittle(...)` wrapper — r4301 still emits a packed `Bit32u` to TempLine, so big-endian hosts need the byteswap. H2/H3 (4BPP_Line and 4BPP_Line_Double): take r4301 entirely — r4301 refactored these from packed `Bit32u` writes to byte-by-byte `Bit8u` writes, which obsoletes the PPC fix in those two functions (byte stores are endianness-agnostic). H4 (text-mode cursor in `VGA_TEXT_Xlat16_Draw_Line`): take r4301's cleaner `if (...) { ... }` form (no `goto skip_cursor`/`font_addr`). |
+
+**Followup for the user:** the new files under `DOSBox/src/hardware/mame/`
+need to be added to `Boxer.xcodeproj`'s Compile Sources build phase
+(`fmopl.cpp`, `saa1099.cpp`, `sn76496.cpp`, `ymdeltat.cpp`, `ymf262.cpp`).
+Without them `adlib.cpp`/`tandy_sound.cpp`/`gameblaster.cpp` won't link.
+I cannot reliably edit the project file blind; flagging here for the
+build-cycle 1 prep.
 
 ### src/ints/ (2 files, 2 hunks)  ✓
 
@@ -225,12 +232,12 @@ stub. Cross-check `4a85221c` for prior art.
 | `src/dos/drive_overlay.cpp` | _(tbd)_ | _(tbd)_ | New overlay drive feature; user-facing, decide whether Boxer wants it |
 | `src/hardware/pci_bus.cpp` | _(tbd)_ | _(tbd)_ | New PCI bus emulation |
 | `src/hardware/pci_devices.h` | _(tbd)_ | _(tbd)_ | PCI device IDs |
-| `src/hardware/mame/emu.h` | _(tbd)_ | _(tbd)_ | MAME compat shim for the new chip emulators below |
-| `src/hardware/mame/fmopl.{cpp,h}` | _(tbd)_ | _(tbd)_ | MAME OPL2/3 — `adlib.cpp` switched to it in r4301 |
-| `src/hardware/mame/saa1099.{cpp,h}` | _(tbd)_ | _(tbd)_ | MAME SAA1099 (Game Blaster / CMS) |
-| `src/hardware/mame/sn76496.{cpp,h}` | _(tbd)_ | _(tbd)_ | MAME SN76496 (Tandy / PCjr) — `tandy_sound.cpp` may switch to it |
-| `src/hardware/mame/ymdeltat.{cpp,h}` | _(tbd)_ | _(tbd)_ | MAME ADPCM-A helper, used by ymf262 |
-| `src/hardware/mame/ymf262.{cpp,h}` | _(tbd)_ | _(tbd)_ | MAME OPL3 |
+| `src/hardware/mame/emu.h` | _(tbd)_ | accept ✓ | Header-only compat shim required by all the chip emulators below. Brought in with the hardware/ batch. |
+| `src/hardware/mame/fmopl.{cpp,h}` | _(tbd)_ | accept ✓ | MAME OPL2/3 — `adlib.cpp` references `MAMEOPL2/3::Handler`. Mandatory for link. |
+| `src/hardware/mame/saa1099.{cpp,h}` | _(tbd)_ | accept ✓ | MAME SAA1099 (Game Blaster / CMS) — `gameblaster.cpp` likely switched to it. Brought in for completeness; verify use during build cycle 1. |
+| `src/hardware/mame/sn76496.{cpp,h}` | _(tbd)_ | accept ✓ | MAME SN76496 (Tandy / PCjr) — `tandy_sound.cpp` H1 swap requires it. Mandatory for link. |
+| `src/hardware/mame/ymdeltat.{cpp,h}` | _(tbd)_ | accept ✓ | MAME ADPCM-A helper used by `ymf262`. Mandatory for link. |
+| `src/hardware/mame/ymf262.{cpp,h}` | _(tbd)_ | accept ✓ | MAME OPL3 — `adlib.cpp` references it via `MAMEOPL3`. Mandatory for link. |
 | `src/libs/zmbv/{makedll.mk,resource.rc,zmbv_mingw.def}` | n/a | drop | MinGW build artifacts, irrelevant to Xcode build |
 
 ## PPC-fix audit checklist
@@ -243,8 +250,21 @@ upstream rewrote the surrounding code.
       drive_fat.cpp (six call sites). Coalface helpers themselves
       (`BXCoalfaceDrives.{h,mm}`) are in `Boxer/`, not in `DOSBox/`, and
       were not touched by this work.
-- [ ] `9456f8cf` — MT-32 endianness fix
-- [ ] `f4935f44` — Tandy / CGA endianness fix
+- [x] `9456f8cf` — MT-32 endianness fix lived in `DOSBox/src/gui/midi_mt32.h`,
+      which Boxer subsequently **deleted** at `f5662d29` ("Reverted MIDI handler
+      source files to DOSBox 0.74-spec now that they're no longer used by Boxer
+      at all" — Boxer moved MT-32 to the MT32Emu/Munt framework on the
+      Boxer-side). The fix is dead code in the leopard_legacy branch and does
+      not need to survive the base-bump. No carry-over needed.
+- [x] `f4935f44` — Tandy / CGA pixel-column flip fix lives in
+      `src/hardware/vga_draw.cpp` (commit message says "Tandy and CGA" but the
+      fix is in vga_draw, not tandy_sound). Carried over selectively in the
+      hardware/ batch: the CGA composite hunk (H1) keeps Boxer's
+      `CFSwapInt32HostToLittle(...)` wrapper around r4301's improved algorithm
+      (still emits packed `Bit32u`, so still needs the byteswap on PPC). The
+      4BPP_Line and 4BPP_Line_Double hunks (H2/H3) take r4301 entirely —
+      r4301 refactored those from packed `Bit32u` writes to byte-by-byte
+      `Bit8u` writes, which obsoletes the PPC fix in those two functions.
 - [x] `Segs::val[]` declared as `Bit16u[8]` in `include/regs.h`. **r4301
       already has the upstream fix** — confirmed by direct inspection. No
       manual carry-over needed; the include/ batch lift picks it up for free.
