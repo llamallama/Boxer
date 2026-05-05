@@ -64,10 +64,13 @@ This means that this file has had too many modifications to be safely replaceabl
 	#define  C_DYNREC 1
 #endif
 //--End of modifications
-//--Added: enable generic dynrec on PowerPC (uses risc_ppc.h backend)
-#if defined(__ppc__) || defined(__ppc64__)
-	#define C_DYNREC 1
-#endif
+//--Added: enable generic dynrec on PowerPC (uses risc_ppc.h backend).
+//Disabled during the r4301 base-bump (Phase 1 build cycle 1) so the PPC
+//build runs the normal core only — Phase 2 re-applies the JIT patch which
+//restores risc_ppc.h, and this clause should be re-enabled at the same time.
+//#if defined(__ppc__) || defined(__ppc64__)
+//	#define C_DYNREC 1
+//#endif
 
 /* Define to 1 to enable floating point emulation */
 #define C_FPU 1

@@ -67,15 +67,35 @@ result. Reachable for reference via the commit hash regardless.
 
 ### Phase 1 — forward-port Boxer mods onto r4301 (no JIT)
 
-- [ ] Resolve merge conflicts subsystem by subsystem (cpu/, dos/, hardware/,
+- [x] Resolve merge conflicts subsystem by subsystem (cpu/, dos/, hardware/,
       ints/, gui/, shell/, misc/, includes). One commit per subsystem.
-- [ ] Triage new-in-r4301 files. Cross-check Madd's `4a85221c` for what
-      mainline-Boxer kept vs dropped. Tracking table below.
-- [ ] Audit the load-bearing PPC fixes against the new r4301 code. Tracking
+      **All 73 hunks across 30 files resolved.**
+- [x] Reset `core_dynrec/` and `core_dynrec.cpp` to r4301 vanilla form
+      (drops the JIT-on-0.74 backport for those files). `risc_ppc.h` removed
+      (Phase 2 re-creates it via `patch-r4301.diff`). `risc_armv4le-s3.h`
+      removed (no longer in r4301). `risc_armv8le.h` lifted from r4301.
+- [x] Disable Boxer's `__ppc__ / __ppc64__` `C_DYNREC` enable in `config.h`
+      for build cycle 1. The PPC build runs normal-core only. Phase 2
+      re-enables the clause alongside re-applying the JIT patch.
+- [x] Triage new-in-r4301 files. Tracking table below.
+- [x] Audit the load-bearing PPC fixes against the new r4301 code. Tracking
       checklist below.
-- [ ] Update `Boxer.xcodeproj` to add/remove file references for the new tree.
+- [ ] Update `Boxer.xcodeproj` to add/remove file references for the new
+      tree. **Followup for the user — I can't reliably edit the project
+      file blind.** Files that need adding to Compile Sources:
+      - `DOSBox/src/hardware/mame/fmopl.cpp`
+      - `DOSBox/src/hardware/mame/saa1099.cpp`
+      - `DOSBox/src/hardware/mame/sn76496.cpp`
+      - `DOSBox/src/hardware/mame/ymdeltat.cpp`
+      - `DOSBox/src/hardware/mame/ymf262.cpp`
+      - `DOSBox/src/dos/drive_overlay.cpp`
+      Files that should *not* be referenced (they were never in Boxer's
+      compile set, or are PPC-deferred): `risc_armv8le.h` (header-only,
+      no compile-phase reference needed), `pci_bus.cpp` /
+      `pci_devices.h` (deferred), `risc_armv4le-s3.h` (deleted).
 - [ ] **Build cycle 1**. Test plan: cold-boot, a known-working game runs
-      under the normal core on the G4, no regressions vs current PPC build.
+      under the normal core on the G4, no regressions vs current PPC
+      build.
 
 ### Phase 2 — re-apply the JIT patch
 
