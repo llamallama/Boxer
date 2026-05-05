@@ -170,11 +170,11 @@ them now would scramble the per-commit story.
 | `src/ints/bios_keyboard.cpp` | 1 | keep Boxer | Boxer commented out the `#if SDL_VERSION_ATLEAST(1, 2, 14)` block and unconditionally `#define CAN_USE_LOCK 1` because Boxer doesn't use SDL. r4301's bare `#endif` would close a `#if` that no longer exists. Drop r4301's `#endif` and the unused-on-Boxer comment about lower-SDL-version handling. |
 | `src/ints/int10_char.cpp` | 1 | take r4301 | r4301 has a clearer comment about mode 6 vs INT 10h fn 09h. Same logic, better wording. |
 
-### src/misc/ (1 file, 3 hunks)
+### src/misc/ (1 file, 3 hunks)  ✓
 
 | File | Hunks | Decision | Rationale |
 |------|-------|----------|-----------|
-| `src/misc/setup.cpp` | 3 | _(pending)_ | |
+| `src/misc/setup.cpp` | 3 | take r4301 | All three hunks are r4301 cleanups. H1: `Bitu val` → `Bit32u value` (64-bit safety: `%u` matches uint32, not Bitu which can be 64-bit). H2/H3: whitespace tweaks in the help-text formatter. |
 
 ### src/shell/ (2 files, 6 hunks)
 
