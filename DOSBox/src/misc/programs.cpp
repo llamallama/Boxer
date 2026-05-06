@@ -259,7 +259,15 @@ bool Program::SetEnv(const char * entry,const char * new_string) {
 }
 
 bool MSG_Write(const char *);
-void restart_program(std::vector<std::string> & parameters);
+
+//restart_program() is defined in r4301's sdlmain.cpp, which Boxer doesn't
+//compile (Boxer wrote sdlmain out of existence — the surrounding Cocoa app
+//owns the runloop). The CONFIG -restart command path is unreachable in a
+//Boxer context, so a no-op stub here resolves the link without changing
+//behaviour. If sdlmain.cpp ever gets compiled again, drop this stub and
+//restore the forward declaration.
+//void restart_program(std::vector<std::string> & parameters);
+static void restart_program(std::vector<std::string> & /*parameters*/) { }
 
 class CONFIG : public Program {
 public:

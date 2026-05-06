@@ -296,6 +296,7 @@ Each row: cycle number, what was sent, what was tested, outcome, follow-up.
 | # | Sent | Tested | Outcome | Follow-up |
 |---|------|--------|---------|-----------|
 | 1 (attempt 1) | commits up to `5223159f` (Phase 1 complete + JIT-disable) | `xcodebuild -configuration "Legacy Release" -target Boxer ARCHS=ppc` | **failed**: 69 errors in 8 root-cause categories | See "Build cycle 1 attempt 1 — fixes" section below. Re-sync, rebuild. |
+| 1 (attempt 2) | commits up to `9ad2fec9` (8 fixes + Xcode adds) | same | **failed at link**: 1 undefined symbol — `restart_program(std::vector<std::string>&)` referenced from `CONFIG::Run()` in programs.o. r4301 added the call in `programs.cpp`; the *definition* lives in `sdlmain.cpp` which Boxer doesn't compile. Compile stage clean. | Stubbed `restart_program` as a `static` no-op in `programs.cpp` itself, since Boxer's CONFIG -restart path is unreachable (Cocoa owns the runloop). Re-sync, rebuild. |
 
 ## Build cycle 1 attempt 1 — fixes
 
