@@ -295,7 +295,27 @@ Each row: cycle number, what was sent, what was tested, outcome, follow-up.
 
 | # | Sent | Tested | Outcome | Follow-up |
 |---|------|--------|---------|-----------|
-| _(pending)_ | | | | |
+| 1 (attempt 1) | commits up to `5223159f` (Phase 1 complete + JIT-disable) | `xcodebuild -configuration "Legacy Release" -target Boxer ARCHS=ppc` | **failed**: 69 errors in 8 root-cause categories | See "Build cycle 1 attempt 1 — fixes" section below. Re-sync, rebuild. |
+
+## Build cycle 1 attempt 1 — fixes
+
+69 errors collapsed into 8 root causes:
+
+1. **`sBitfs` macro undefined** (12 errors in cpu.cpp/dma.cpp/callback.cpp). r4301 uses `sBitfs(x)` printf-format-string helper for `Bitu` (32-or-64-bit). Defined by autoconf via `acinclude.m4` upstream; Boxer has a hand-written `config.h` and was missing it. Added to `config.h`: `sBit32fs(a) #a`, `sBit64fs(a) "ll" #a`, `sBitfs` switches on `__LP64__`.
+
+2. **`midi.h: No such file or directory`** (cascade of 14 errors in midi.cpp + mixer.cpp). The header is on disk but Xcode 3's header maps only index files referenced from the project. **User followup: add `DOSBox/include/midi.h` to the Xcode project under the DOSBox/include group.**
+
+3. **`pci_bus.h: No such file or directory`** (2 errors in dosbox.cpp + bios.cpp). r4301 added unconditional `#include "pci_bus.h"` to both files; the actual PCI calls are gated by `PCI_FUNCTIONALITY_ENABLED` which Boxer doesn't define, but the include itself runs unconditionally. Lifted `include/pci_bus.h` from r4301 (no .cpp needed since nothing references PCI symbols without the gate). **User followup: add `DOSBox/include/pci_bus.h` to the Xcode project.**
+
+4. **`'id' Objective-C collision in CFileInfo`** (`dos_system.h:187: expected unqualified-id before '=' token`). r4301 added `Bit16u id;` to `CFileInfo`, which collides with the Objective-C `id` typedef pulled in transitively via Boxer's `BXCoalface.h` (included from `dosbox.h`, included from `dos_system.h`). Renamed `CFileInfo::id` → `CFileInfo::cacheID` and updated all 13 call sites in `drive_cache.cpp` (sed pattern `s/(dir|dirSearch\[id\])->id\b/\1->cacheID/g` — local `id` loop counters left alone).
+
+5. **`'CALLBACK_HandlerObject' / 'CBRET_NONE' / 'lastint' not declared` in dos_memory.cpp**. Boxer's `DOS_default_handler` and the function-local `callbackhandler` use callback APIs but the merged file doesn't `#include "callback.h"`. Added the include.
+
+6. **`localFile::willBecomeUnavailable` not declared** (drive_local.cpp:709). When we dropped the inline `class localFile` declaration from drive_local.cpp (it moved to `dos_system.h` in r4301), the override declaration for Boxer's `willBecomeUnavailable` went with it. Added the override declaration to `localFile` in `dos_system.h`. (Base class `DOS_File` already has `virtual void willBecomeUnavailable() { }` from auto-merge.)
+
+7. **`localDrive::allocation is private`** (drives.h:105 cascade in drive_physfs.cpp). The merged `drives.h` has `private:` before the `allocation` struct — r4301 made it private; Boxer needs it `protected:` so `physfsDrive` (a subclass) can read its fields. Changed to `protected:`.
+
+8. **`GetShortName(char[512], char[512])` no matching call** (drive_overlay.cpp:371). r4301's `drive_overlay.cpp` calls the upstream 2-arg `GetShortName(fullname, shortname)`, but Boxer changed `DOS_Drive_Cache::GetShortName` to a 3-arg form `(dirpath, filename, shortname)`. Added a 2-arg backward-compat overload in `dos_system.h` + implementation in `drive_cache.cpp` that splits `fullname` at the last `CROSS_FILESPLIT` and dispatches to the 3-arg form.
 
 ## Decisions
 

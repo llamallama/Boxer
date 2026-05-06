@@ -20,6 +20,8 @@
 #include "dosbox.h"
 #include "mem.h"
 #include "dos_inc.h"
+//Boxer-added DOS_default_handler uses CALLBACK_HandlerObject, CBRET_NONE, and lastint.
+#include "callback.h"
 
 #define UMB_START_SEG 0x9fff
 

@@ -129,9 +129,13 @@ public:
 	bool Seek(Bit32u * pos,Bit32u type);
 	bool Close();
 	Bit16u GetInformation(void);
-	bool UpdateDateTimeFromHost(void);   
+	bool UpdateDateTimeFromHost(void);
 	void FlagReadOnlyMedium(void);
 	void Flush(void);
+	//--Added 2011-11-03 by Alun Bestor to let Boxer inform open file handles
+	//that their physical backing media will be removed.
+	void willBecomeUnavailable(void);
+	//--End of modifications
 	FILE * fhandle; //todo handle this properly
 private:
 	bool read_only_medium;
@@ -163,8 +167,11 @@ public:
 
 	//--Modified 2009-10-06 by Alun Bestor: changed function signature to correspond to new implementation in drive_cache.cpp.
 	bool		GetShortName		(const char* dirpath, const char* filename, char* shortname);
-	//bool		GetShortName		(const char* fullname, char* shortname);
 	//--End of modifications
+
+	//Backwards-compat overload taking a single full path (used by drive_overlay.cpp from r4301).
+	//Splits at the last CROSS_FILESPLIT and dispatches to the 3-arg form.
+	bool		GetShortName		(const char* fullname, char* shortname);
 
 	bool		FindFirst			(char* path, Bit16u& id);
 	bool		FindNext			(Bit16u id, char* &result);
@@ -184,7 +191,7 @@ public:
 		CFileInfo(void) {
 			orgname[0] = shortname[0] = 0;
 			isOverlayDir = isDir = false;
-			id = MAX_OPENDIRS;
+			cacheID = MAX_OPENDIRS;
 			nextEntry = shortNr = 0;
 		}
 		~CFileInfo(void) {
@@ -196,7 +203,9 @@ public:
 		char		shortname	[DOS_NAMELENGTH_ASCII];
 		bool		isOverlayDir;
 		bool		isDir;
-		Bit16u		id;
+		//Renamed from `id` to avoid collision with Objective-C's `id` typedef
+		//that is pulled in via Boxer's BXCoalface.h include from dosbox.h.
+		Bit16u		cacheID;
 		Bitu		nextEntry;
 		Bitu		shortNr;
 		// contents

@@ -95,7 +95,7 @@ protected:
 		char srch_dir[CROSS_LEN];
 	} srchInfo[MAX_OPENDIRS];
 
-private:
+protected:
 	struct {
 		Bit16u bytes_sector;
 		Bit8u sectors_cluster;

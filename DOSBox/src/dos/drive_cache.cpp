@@ -119,16 +119,16 @@ void DOS_Drive_Cache::SetLabel(const char* vname,bool cdrom,bool allowupdate) {
 }
 
 Bit16u DOS_Drive_Cache::GetFreeID(CFileInfo* dir) {
-	if (dir->id != MAX_OPENDIRS)
-		return dir->id;
+	if (dir->cacheID != MAX_OPENDIRS)
+		return dir->cacheID;
 	for (Bit16u i=0; i<MAX_OPENDIRS; i++) {
 		if (!dirSearch[i]) {
-			dir->id = i;
+			dir->cacheID = i;
 			return i;
 		}
 	}
 	LOG(LOG_FILES,LOG_NORMAL)("DIRCACHE: Too many open directories!");
-	dir->id=0;
+	dir->cacheID=0;
 	return 0;
 }
 
@@ -376,6 +376,22 @@ bool DOS_Drive_Cache::GetShortName(const char* dirpath, const char*filename, cha
 	return false;
 }
 //--End of modifications
+
+//Backwards-compat 2-arg overload for r4301's drive_overlay.cpp.
+//Splits `fullname` at the last CROSS_FILESPLIT and dispatches to the 3-arg form.
+bool DOS_Drive_Cache::GetShortName(const char* fullname, char* shortname) {
+	const char* sep = strrchr(fullname, CROSS_FILESPLIT);
+	if (!sep) {
+		//No directory component — look up in the cache root.
+		return GetShortName("", fullname, shortname);
+	}
+	char dirpath[CROSS_LEN];
+	size_t dirlen = (size_t)(sep - fullname);
+	if (dirlen >= CROSS_LEN) dirlen = CROSS_LEN - 1;
+	memcpy(dirpath, fullname, dirlen);
+	dirpath[dirlen] = '\0';
+	return GetShortName(dirpath, sep + 1, shortname);
+}
 
 int DOS_Drive_Cache::CompareShortname(const char* compareName, const char* shortName) {
 	char const* cpos = strchr(shortName,'~');
@@ -671,7 +687,7 @@ DOS_Drive_Cache::CFileInfo* DOS_Drive_Cache::FindDirInfo(const char* path, char*
 			ReadDir(id,result);
 			strcpy(dirPath,buffer);
 			if (dirSearch[id]) {
-				dirSearch[id]->id = MAX_OPENDIRS;
+				dirSearch[id]->cacheID = MAX_OPENDIRS;
 				dirSearch[id] = 0;
 			}
 		};
@@ -705,7 +721,7 @@ DOS_Drive_Cache::CFileInfo* DOS_Drive_Cache::FindDirInfo(const char* path, char*
 					ReadDir(id,result);
 					strcpy(dirPath,buffer);
 					if (dirSearch[id]) {
-						dirSearch[id]->id = MAX_OPENDIRS;
+						dirSearch[id]->cacheID = MAX_OPENDIRS;
 						dirSearch[id] = 0;
 					}
 				};
@@ -754,7 +770,7 @@ bool DOS_Drive_Cache::OpenDir(CFileInfo* dir, const char* expand, Bit16u& id) {
 			return true;
 		}
 		if (dirSearch[id]) {
-			dirSearch[id]->id = MAX_OPENDIRS;
+			dirSearch[id]->cacheID = MAX_OPENDIRS;
 			dirSearch[id] = 0;
 		}
 	};
@@ -820,7 +836,7 @@ bool DOS_Drive_Cache::ReadDir(Bit16u id, char* &result) {
 		void* dirp = drive->opendir(dirPath);
 		if (!dirp) {
 			if (dirSearch[id]) {
-				dirSearch[id]->id = MAX_OPENDIRS;
+				dirSearch[id]->cacheID = MAX_OPENDIRS;
 				dirSearch[id] = 0;
 			}
 			return false;
@@ -850,7 +866,7 @@ bool DOS_Drive_Cache::ReadDir(Bit16u id, char* &result) {
 	};
 	if (SetResult(dirSearch[id], result, dirSearch[id]->nextEntry)) return true;
 	if (dirSearch[id]) {
-		dirSearch[id]->id = MAX_OPENDIRS;
+		dirSearch[id]->cacheID = MAX_OPENDIRS;
 		dirSearch[id] = 0;
 	}
 	return false;
@@ -942,9 +958,9 @@ void DOS_Drive_Cache::ClearFileInfo(CFileInfo *dir) {
 		if (CFileInfo *info = dir->fileList[i])
 			ClearFileInfo(info);
 	}
-	if (dir->id != MAX_OPENDIRS) {
-		dirSearch[dir->id] = 0;
-		dir->id = MAX_OPENDIRS;
+	if (dir->cacheID != MAX_OPENDIRS) {
+		dirSearch[dir->cacheID] = 0;
+		dir->cacheID = MAX_OPENDIRS;
 	}
 }
 

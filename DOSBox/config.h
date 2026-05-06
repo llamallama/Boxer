@@ -317,6 +317,20 @@ typedef		int64_t		Bit64s;
 	typedef Bit32s Bits;
 #endif
 
+//--Added during r4301 base-bump: printf-format helpers for Bit32u/Bit64u/Bitu.
+//r4301 emits LOG_MSG / E_Exit format strings like
+//    "DMA segbound wrapping (read): %x:%x size %" sBitfs(x) " [%x] wrap %x"
+//where sBitfs expands to the right length modifier for Bitu on the host.
+//On macOS, uint32_t is `unsigned int` (no length modifier needed) and
+//uint64_t is `unsigned long long` ("ll" length modifier) on every Boxer arch.
+#define sBit32fs(a) #a
+#define sBit64fs(a) "ll" #a
+#if defined(__LP64__)
+	#define sBitfs sBit64fs
+#else
+	#define sBitfs sBit32fs
+#endif
+
 /* The size of `int *', as computed by sizeof. */
 //#define SIZEOF_INT_P 4
 
