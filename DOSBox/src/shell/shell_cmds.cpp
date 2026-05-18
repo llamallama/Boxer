@@ -1390,7 +1390,12 @@ void DOS_Shell::CMD_CHOICE(char * args){
 	Bit16u n=1;
 	do {
 		DOS_ReadFile (STDIN,&c,&n);
-	} while (!c || !(ptr = strchr(rem,(optS?c:toupper(c)))));
+	} while (!exit && (!c || !(ptr = strchr(rem,(optS?c:toupper(c))))));
+	//Boxer cancels a running shell by setting exit (BXEmulator -cancel).
+	//Unlike InputCommand, this raw read loop has no other escape, so
+	//without the !exit guard above it spins forever on quit while CHOICE
+	//is waiting (e.g. DOSBENCH.BAT's menu). Abandon the prompt on exit.
+	if (exit) return;
 	c = optS?c:(Bit8u)toupper(c);
 	DOS_WriteFile (STDOUT,&c, &n);
 	dos.return_code = (Bit8u)(ptr-rem+1);
