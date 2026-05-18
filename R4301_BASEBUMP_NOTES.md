@@ -136,9 +136,9 @@ result. Reachable for reference via the commit hash regardless.
       `#include "core_dynrec/risc_ppc.h"` at `core_dynrec.cpp:153`
       (same failure mode as Phase 1 `midi.h`). Also `git add` it
       (currently untracked).
-- [ ] **Build cycle 2**. Test plan: the standing six-title matrix, but
-      `core=dynamic`. Differential rule: any failure, repro on
-      `core=normal` first to classify base-bump vs JIT.
+- [x] **Build cycle 2 — PASSED on G4.** Built clean (0 errors), JIT
+      engages and runs on real hardware against the r4301 base.
+      Phase 2 complete.
 
 ### Phase 3 — validation
 
@@ -378,6 +378,8 @@ Each row: cycle number, what was sent, what was tested, outcome, follow-up.
 | 1 (attempt 3) | commits up to `bd067e82` (restart_program stub) | cold boot + run games on G4 | **builds, links, boots, runs games** under normal core. One regression: launch-panel targets in a subdirectory fail — shell stays at `C:\>` and the bare program name is not found. Manual `cd <dir>` then run works. | Root-caused to r4301's new trailing-backslash rejection in `DOS_ChangeDir` (auto-merge bug — `dos_files.cpp` was never in the conflict queue). Boxer's launch always passes a trailing-backslash dir path. Removed the rejection. Re-sync, rebuild, retest DOSBENCH subdir launch. |
 | 1 (attempt 4) | commit `d53a9c7d` (DOS_ChangeDir fix) | DOSBENCH subdir launch + quit on G4 | **subdir launch fixed.** New regression: quitting while DOSBENCH.BAT's `CHOICE` menu is waiting hangs the app (window closes, must force-quit). `sample` of pid 278 showed the emulation thread in a 100% busy spin: `CMD_CHOICE → DOS_ReadFile → device_CON::Read → CALLBACK_RunRealInt → DOSBOX_RunMachine → Normal_Loop → boxer_runLoopShouldContinue`. Confirmed CHOICE-specific (answering the prompt lets quit work normally). | Internal `DOS_Shell::CMD_CHOICE` raw key-read loop never checks the shell `exit` flag, so Boxer's cancel (`shell->exit=YES`) can't break it. Added `!exit` to the loop condition + early `return` on exit. Re-sync, rebuild, retest quit-during-CHOICE. |
 | 1 (attempt 5) | commit `20bc7b5f` (CMD_CHOICE fix) | quit-during-CHOICE on G4 | **PASSED.** Quit-during-CHOICE no longer hangs; subdir launch and normal CHOICE answering still work. Build cycle 1 complete — Phase 1 done. | Proceed to Phase 2 (re-apply `patch-r4301.diff`, re-enable PPC `C_DYNREC`). |
+| 2 (attempt 1) | commits up to `9fa7bc15` (Phase 2 JIT patch + risc_ppc.h Xcode ref) | compile/link only | **BUILD SUCCEEDED.** 0 compile errors, 0 link errors, `-arch ppc`. `risc_ppc.h` resolved (Xcode file-ref worked); the 907-line PPC backend compiled clean as part of `core_dynrec.cpp`. 238 warnings (expected r4301 `-Wshadow` noise). JIT backend dropped in with zero manual code fixes — the base-bump payoff. | Run the six-title matrix on the G4 with `core=dynamic`. Differential rule in force. Bank Quake fps vs Phase 1. |
+| 2 (G4 test) | same build (`9fa7bc15`) | matrix with `core=dynamic` on G4 | **PASSED — "Everything works. JIT engages."** Phase 2 complete: the PPC JIT runs on real hardware against the r4301 base. The full base-bump + JIT re-application is hardware-validated. | Phase 3: regression sweep vs the JIT-on-0.74 golden build (`da37579d`). Capture Quake `core=dynamic` fps vs the Phase 1 baseline for the JIT-correctness check. |
 
 ## Build cycle 1 attempt 1 — fixes
 
