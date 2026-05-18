@@ -93,9 +93,10 @@ result. Reachable for reference via the commit hash regardless.
       compile set, or are PPC-deferred): `risc_armv8le.h` (header-only,
       no compile-phase reference needed), `pci_bus.cpp` /
       `pci_devices.h` (deferred), `risc_armv4le-s3.h` (deleted).
-- [ ] **Build cycle 1**. Test plan: cold-boot, a known-working game runs
-      under the normal core on the G4, no regressions vs current PPC
-      build.
+- [x] **Build cycle 1 — PASSED on G4.** Builds, links, boots, runs games
+      under the normal core. Two integration regressions found and fixed
+      in-cycle (`d53a9c7d` DOS_ChangeDir trailing-backslash; `20bc7b5f`
+      CMD_CHOICE quit hang), both verified fixed on the G4. Phase 1 done.
 
 ### Phase 2 — re-apply the JIT patch
 
@@ -299,6 +300,7 @@ Each row: cycle number, what was sent, what was tested, outcome, follow-up.
 | 1 (attempt 2) | commits up to `9ad2fec9` (8 fixes + Xcode adds) | same | **failed at link**: 1 undefined symbol — `restart_program(std::vector<std::string>&)` referenced from `CONFIG::Run()` in programs.o. r4301 added the call in `programs.cpp`; the *definition* lives in `sdlmain.cpp` which Boxer doesn't compile. Compile stage clean. | Stubbed `restart_program` as a `static` no-op in `programs.cpp` itself, since Boxer's CONFIG -restart path is unreachable (Cocoa owns the runloop). Re-sync, rebuild. |
 | 1 (attempt 3) | commits up to `bd067e82` (restart_program stub) | cold boot + run games on G4 | **builds, links, boots, runs games** under normal core. One regression: launch-panel targets in a subdirectory fail — shell stays at `C:\>` and the bare program name is not found. Manual `cd <dir>` then run works. | Root-caused to r4301's new trailing-backslash rejection in `DOS_ChangeDir` (auto-merge bug — `dos_files.cpp` was never in the conflict queue). Boxer's launch always passes a trailing-backslash dir path. Removed the rejection. Re-sync, rebuild, retest DOSBENCH subdir launch. |
 | 1 (attempt 4) | commit `d53a9c7d` (DOS_ChangeDir fix) | DOSBENCH subdir launch + quit on G4 | **subdir launch fixed.** New regression: quitting while DOSBENCH.BAT's `CHOICE` menu is waiting hangs the app (window closes, must force-quit). `sample` of pid 278 showed the emulation thread in a 100% busy spin: `CMD_CHOICE → DOS_ReadFile → device_CON::Read → CALLBACK_RunRealInt → DOSBOX_RunMachine → Normal_Loop → boxer_runLoopShouldContinue`. Confirmed CHOICE-specific (answering the prompt lets quit work normally). | Internal `DOS_Shell::CMD_CHOICE` raw key-read loop never checks the shell `exit` flag, so Boxer's cancel (`shell->exit=YES`) can't break it. Added `!exit` to the loop condition + early `return` on exit. Re-sync, rebuild, retest quit-during-CHOICE. |
+| 1 (attempt 5) | commit `20bc7b5f` (CMD_CHOICE fix) | quit-during-CHOICE on G4 | **PASSED.** Quit-during-CHOICE no longer hangs; subdir launch and normal CHOICE answering still work. Build cycle 1 complete — Phase 1 done. | Proceed to Phase 2 (re-apply `patch-r4301.diff`, re-enable PPC `C_DYNREC`). |
 
 ## Build cycle 1 attempt 1 — fixes
 
