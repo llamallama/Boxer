@@ -118,6 +118,55 @@ result. Reachable for reference via the commit hash regardless.
       JIT-on-0.74 build (commit `da37579d` on the old `r4301` branch) is a
       sign Phase 1 mod-replay missed something.
 
+## Regression matrix & test methodology
+
+Standing, fixed regression set. Run the **identical** matrix every build
+cycle so results compare cycle-over-cycle. This is the floor, not the
+ceiling — keep doing exploratory passes on top; a fixed list proves
+"no regression vs last cycle" but can't find novel bugs.
+
+Each title is pinned to the risk axis it exercises (chosen to cover what
+the base-bump actually changed, not generic coverage).
+
+| Title | Covers | Phase 1 (normal core) |
+|-------|--------|-----------------------|
+| Epic Pinball (demo) | GUS + SB16, fast real-mode CPU | ✅ G4-confirmed |
+| Commander Keen | Adlib (new MAME `ymf262`) + PC Speaker, EGA timing/scroll | ✅ G4-confirmed |
+| PC Player Benchmark | DOS/4GW protected-mode JIT path, deterministic number | ✅ G4-confirmed |
+| Quake timedemo (DOSBENCH) | FPU path, **deterministic fps number** | ✅ G4-confirmed (record fps as JIT baseline) |
+| Round 42 | CGA tweaked-mode → PPC big-endian `vga_draw.cpp` `CFSwapInt32HostToLittle` fix. Requires `machine=cga` in the gamebox `.conf` or the path isn't exercised. | ✅ G4-confirmed (renders correctly on PPC; wrong endianness can't accidentally produce correct colour) |
+| Star Trek 25th Anniversary | CD-ROM → `cdrom_image.cpp` / `drive_iso.cpp` / cdromDrive ctor / MSCDEX | ✅ G4-confirmed |
+
+**Phase 1 fully signed off — all six axes hardware-verified under the
+normal core.**
+
+### Differential rule (bug classifier)
+
+When something breaks in Phase 2+ (`core=dynamic`), **first reproduce it
+with `core=normal` on the same build**:
+
+- Repros on normal core → base-bump bug that slipped Phase 1.
+- Only on dynamic → JIT-side.
+
+This stops JIT ghosts that are actually integration bugs (and vice
+versa). Commit `43385c29` is the "normal core on r4301" reference point.
+
+### Reference baselines
+
+- `43385c29` — Phase 1, r4301 normal-core, hardware-passed. Base-bump
+  reference.
+- `da37579d` (old `r4301` branch) — JIT-on-0.74 golden build. Phase 3
+  compares against it; anything that regresses vs it is a mod-replay
+  miss. **Do not overwrite/delete that binary.** For Quake, "same fps"
+  is the JIT-correctness signal, not "ran fine".
+
+### Hang procedure
+
+Any hang: `sample <pid> 10 -file out.txt` the wedged process **first**,
+before theorising. This cycle it collapsed a multi-layer speculative
+trace into a one-line `CMD_CHOICE` fix. The emulation thread is the one
+with DOSBox frames (`Normal_Loop`, `DOS_Shell::*`, `CALLBACK_*`).
+
 ## Phase 0 conflict queue
 
 30 files with merge conflicts; 73 hunks total. Hunk counts in parens.
