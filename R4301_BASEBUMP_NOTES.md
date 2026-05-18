@@ -100,17 +100,45 @@ result. Reachable for reference via the commit hash regardless.
 
 ### Phase 2 — re-apply the JIT patch
 
-- [ ] `patch -p1 < patch-r4301.diff` against the Phase 1 result.
-- [ ] Resolve residual conflicts. Known ones from PPC_JIT_NOTES: FAT coalface
-      (skip MBR/boot-sector hunks, keep FAT-entry hunks), `cache.h`
-      `PFLAG_HASCODE` divergence.
-- [ ] Re-add Boxer's `config.h` clause enabling `C_DYNREC` on
-      `__ppc__ || __ppc64__`.
-- [ ] Verify `dyn_set_eip_end` ended up with the patch's 32-bit-load form.
-- [ ] Add `risc_ppc.h` to Xcode project if needed (per PPC_JIT_NOTES the
-      `#include` is conditional so a build-phase entry may not be necessary).
-- [ ] **Build cycle 2**. Test plan: same workload as cycle 1 but with
-      `core=dynamic`.
+- [x] Applied `patch-r4301.diff` with `patch -p0` from `DOSBox/` (patch
+      paths are root-relative, not `-p1`). JIT backend files
+      (`fpu.h`, `mem.h`, `risc_ppc.h` [new], `cache.h`, `decoder_basic.h`,
+      `decoder_opcodes.h`, `core_dynrec.cpp`) taken **wholesale** — all
+      landed clean. `cache.h` applied clean → the `PFLAG_HASCODE`
+      divergence flagged in PPC_JIT_NOTES was a 0.74-vs-r4301 artifact
+      the base-bump dissolved (the point of the bump). `Makefile.am`
+      hunk skipped (autotools, irrelevant to the Xcode build).
+- [x] Resolved `drive_fat.cpp` selectively. **A clean `patch` apply here
+      is WRONG**: the patch's MBR/boot-sector/dir-entry hunks (#6–#10)
+      apply cleanly but would double-swap on PPC because Boxer's
+      `BXCoalfaceDrives` helpers already byteswap those structs (6 sites
+      preserved in Phase 1, lines 737/781/1110/1222/1266/1313). Reverted
+      `drive_fat.cpp` to Phase 1 and hand-applied **only** hunks #2–#5
+      (the 7 `var_read`/`var_write` substitutions in
+      `getClusterValue`/`setClusterValue` — the raw FAT-entry buffer the
+      coalface never touches). Skipped #1 (unrelated EOC refactor, not in
+      the PPC keep-list) and #6–#12 (coalface-owned). Matches
+      `PPC_JIT_NOTES.md:43` prior art exactly.
+- [x] Re-enabled the `__ppc__ || __ppc64__` `C_DYNREC` clause in
+      `config.h`.
+- [x] Verified `dyn_set_eip_end(HostReg,Bit32u)` has the patch's
+      32-bit-load form: `gen_mov_word_to_reg(reg,&reg_eip,true)` (forced
+      full-word load + `get_extend_word` mask), with the old
+      `decode.big_op` form commented out. `decoder_basic.h` taken
+      wholesale from the patch so this is the patch's form by
+      construction; confirmed by inspection.
+- [ ] **Xcode followup (user):** add `DOSBox/src/cpu/core_dynrec/risc_ppc.h`
+      to the project as a **file reference only** (under the core_dynrec
+      group, alongside `risc_x86.h`) — NOT a Compile Sources entry (it's
+      a header). `risc_x86.h` has project refs which is why
+      `#include "core_dynrec/risc_x86.h"` resolves for i386; `risc_ppc.h`
+      has none, so the PPC build will fail to resolve
+      `#include "core_dynrec/risc_ppc.h"` at `core_dynrec.cpp:153`
+      (same failure mode as Phase 1 `midi.h`). Also `git add` it
+      (currently untracked).
+- [ ] **Build cycle 2**. Test plan: the standing six-title matrix, but
+      `core=dynamic`. Differential rule: any failure, repro on
+      `core=normal` first to classify base-bump vs JIT.
 
 ### Phase 3 — validation
 
@@ -381,4 +409,7 @@ Append-only log of load-bearing decisions made during the work. One line each.
 - 2026-05-04 — Phase 1 commit strategy: per-subsystem commits in `boxer-ppcjit` are produced by `rsync -a --existing` from sandbox into `DOSBox/<subsystem>/`. New-in-r4301 files are deferred to their own commits when their consumers land. Intermediate commits are not individually buildable; build cycle 1 only fires after the final Phase 1 commit. This keeps `git log --oneline` legible at the cost of mid-bump compile-broken states.
 - 2026-05-04 — `Segs::val[]` PPC fix already present in r4301 upstream — no manual carry-over needed.
 - 2026-05-17 — `dos_files.cpp` auto-merged silently and took r4301's stricter `DOS_ChangeDir`, which hard-rejects any path ending in `\`. Boxer's launch (`BXEmulator+BXShell.mm -executeProgramAtPath:`) always passes a trailing-backslash dir, so every subdirectory launch-panel target regressed. Removed r4301's trailing-backslash rejection (0.74-compatible and DOS-accurate — real DOS accepts `cd c:\foo\`). Lesson: the "auto-merged, worth a glance" list was not exhaustive — `dos_files.cpp` wasn't even on it; a clean auto-merge can still take an upstream behavior change that breaks a Boxer contract.
+- 2026-05-17 — Phase 2 patch apply: `patch -p0` from `DOSBox/` (not `-p1` — patch paths are source-root-relative). JIT backend files taken wholesale (all clean); `Makefile.am` skipped. `cache.h` applied clean, retiring the PPC_JIT_NOTES `PFLAG_HASCODE` concern (0.74-vs-r4301 artifact dissolved by the base-bump).
+- 2026-05-17 — Phase 2 `drive_fat.cpp` is the one place a clean patch apply is actively wrong. Patch hunks #6–#10 (MBR/boot-sector/dir-entry `var_read`/`var_write`) apply cleanly but Boxer's `BXCoalfaceDrives` already byteswaps those structs → applying = double-swap → silent FAT-image corruption on PPC. Resolution: revert `drive_fat.cpp` to Phase 1, hand-apply only hunks #2–#5 (FAT-entry buffer, coalface-untouched). Skipped #1 (unrelated EOC refactor). This is the central PPC-correctness call of Phase 2; matches `PPC_JIT_NOTES.md:43`.
+- 2026-05-17 — `risc_ppc.h` needs an Xcode **file reference** (not Compile Sources) for the PPC header map to resolve `#include "core_dynrec/risc_ppc.h"`, by direct analogy to `risc_x86.h` (project-referenced, resolves for i386). PPC_JIT_NOTES' "build-phase entry may not be necessary" is correct only about Compile Sources; a file reference IS required. User followup (can't edit pbxproj blind).
 - 2026-05-17 — `DOS_Shell::CMD_CHOICE`'s raw `DOS_ReadFile(STDIN)` key-read loop never checked the shell `exit` flag. Boxer cancels a shell by setting `shell->exit=YES` (BXEmulator -cancel) and relies on read loops honoring it — the normal `InputCommand` does, via `boxer_handleCommandInput`. CMD_CHOICE bypassed all of that, so quitting while a CHOICE prompt was waiting (DOSBENCH.BAT menu) spun the emulation thread forever. Added `!exit` to the loop condition + early return. Diagnosed from a `sample` of the hung pid — runtime evidence collapsed a deep speculative trace into a one-line root cause. Lesson: any internal shell command with its own blocking read (not just InputCommand) must honor `exit` for Boxer's quit to work; CMD_CHOICE is fixed, but audit similar raw-read commands if more hang-on-quit reports appear.
