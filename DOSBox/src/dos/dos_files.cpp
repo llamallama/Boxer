@@ -213,11 +213,12 @@ bool DOS_ChangeDir(char const * const dir) {
 		return false;
 	}
 	if (!DOS_MakeName(dir,fulldir,&drive)) return false;
-	if (strlen(fulldir) && testdir[len-1]=='\\') {
-		DOS_SetError(DOSERR_PATH_NOT_FOUND);
-		return false;
-	}
-	
+	//r4301 added a hard rejection of any path ending in '\\' here. Boxer's
+	//launch flow (BXEmulator+BXShell.mm -executeProgramAtPath:) always hands
+	//DOS_ChangeDir a trailing-backslash directory ("\\DOSBENCH\\"), which 0.74
+	//tolerated and real DOS accepts. Keeping r4301's check breaks every
+	//launch-panel target that lives in a subdirectory, so it is removed.
+
 	if (Drives[drive]->TestDir(fulldir)) {
 		strcpy(Drives[drive]->curdir,fulldir);
 		return true;
