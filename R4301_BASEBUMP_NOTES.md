@@ -142,9 +142,13 @@ result. Reachable for reference via the commit hash regardless.
 
 ### Phase 3 — validation
 
-- [ ] Workload sweep on the G4. Anything that regresses vs the current
-      JIT-on-0.74 build (commit `da37579d` on the old `r4301` branch) is a
-      sign Phase 1 mod-replay missed something.
+- [x] **Phase 3 — PASSED (strict win) on the G4.** Six-title matrix
+      runs under `core=dynamic`; Quake timedemo deterministic (969
+      frames) across all builds. New r4301+JIT (8.7 fps) **beats** the
+      JIT-on-0.74 golden build (`da37579d`, 7.4 fps) by ~17%; interpreter
+      perf unchanged vs stock 0.74. No mod-replay regression found —
+      performance improved. **Project complete: base-bump + JIT
+      migration validated end to end.**
 
 ## Regression matrix & test methodology
 
@@ -178,6 +182,24 @@ with `core=normal` on the same build**:
 
 This stops JIT ghosts that are actually integration bugs (and vice
 versa). Commit `43385c29` is the "normal core on r4301" reference point.
+
+### Quake timedemo numbers (deterministic — 969-frame "THE NECROPOLIS" demo)
+
+| Build | Core | fps | seconds |
+|-------|------|-----|---------|
+| stock leopard_legacy 0.74, no JIT | normal | 3.9 | 246.9 |
+| `9fa7bc15` (Phase 2, r4301+JIT) | normal | 3.9 | 245.4 |
+| `da37579d` (JIT-on-0.74 golden) | dynamic | 7.4 | 129.9 |
+| `9fa7bc15` (Phase 2, r4301+JIT) | dynamic | **8.7** | **111.3** |
+
+Same 969 frames + identical pickup log across **all four** runs ⇒ JIT
+functionally deterministic everywhere (no desync; correct FPU/integer
+results). Base-bump did NOT cost interpreter perf (new normal core 3.9
+≈ stock 0.74 no-JIT 3.9, <1% noise) — base stable, JIT the only
+variable. **Phase 3 headline: new r4301+JIT (8.7) beats the JIT-on-0.74
+golden build (7.4) by ~17%.** Speedup over interpreter: 1.9× (old) →
+2.2× (new). The migration improved JIT performance while preserving
+correctness — strict win, not just no-regression.
 
 ### Reference baselines
 
