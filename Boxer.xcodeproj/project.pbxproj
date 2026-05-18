@@ -488,6 +488,7 @@
 		29B97316FDCFA39411CA2CEA /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		29B97324FDCFA39411CA2CEA /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
 		29B97325FDCFA39411CA2CEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
+		831851CB2FBAC0C30087239A /* risc_ppc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = risc_ppc.h; sourceTree = "<group>"; };
 		839459C52FAAE05400B18028 /* emu.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = emu.h; sourceTree = "<group>"; };
 		839459C62FAAE05400B18028 /* fmopl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = fmopl.cpp; sourceTree = "<group>"; };
 		839459C72FAAE05400B18028 /* fmopl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fmopl.h; sourceTree = "<group>"; };
@@ -1942,6 +1943,7 @@
 		9F7720A912B38C4400072AE8 /* core_dynrec */ = {
 			isa = PBXGroup;
 			children = (
+				831851CB2FBAC0C30087239A /* risc_ppc.h */,
 				9F7720AA12B38C4400072AE8 /* cache.h */,
 				9F7720AB12B38C4400072AE8 /* decoder.h */,
 				9F7720AC12B38C4400072AE8 /* decoder_basic.h */,
