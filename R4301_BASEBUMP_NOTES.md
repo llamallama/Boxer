@@ -10,15 +10,22 @@ as any load-bearing decision. Don't defer.
 
 ## Branches
 
-- `leopard_legacy` — clean Boxer leopard_legacy, untouched.
-- `r4301` (deleted; renamed to `r4301-basebump`) — formerly held the
-  JIT-on-0.74 backport. The previous JIT-on-0.74 work is reachable via commit
-  hashes / reflog if needed.
-- `r4301-basebump` — **active branch**. The base-bump work happens here.
-
-The JIT-on-0.74 backport commit (`da37579d`) sits in this branch's history but
-will be superseded once the `DOSBox/` tree is replaced with the r4301-merged
-result. Reachable for reference via the commit hash regardless.
+- `leopard_legacy` — the fork's **public release mainline** (local ==
+  `origin/leopard_legacy`). It already carries the JIT-on-0.74 work
+  (`da37579d` is reachable from it). Earlier note here ("clean Boxer
+  leopard_legacy, untouched") was wrong — corrected during the v2.0.0
+  merge prep. Before that merge its tip was `fe7b1960`.
+- `r4301-basebump` — where Phase 0–3 happened; strict descendant of
+  `leopard_legacy` (clean fast-forward, no divergence). Merged into
+  `leopard_legacy` via `--no-ff` and tagged `v2.0.0`.
+- `v1.0.0` — release tag at `4a454a1c`, the original JIT-on-0.74 work.
+  That commit is an **orphan** (on no branch): the `leopard_legacy`
+  line was rewritten at some point (`4a454a1c` and `fe7b1960` share an
+  identical commit message — the rewrite signature), leaving `v1.0.0`
+  pinning the pre-rewrite commit. Benign: the tag/release still
+  resolves; a tag needs no branch. `v1.0.0` is immutable, untouched.
+- `v2.0.0` — this project's release: r4301 base-bump + PPC JIT,
+  hardware-validated, ~17% faster than the v1.0.0 JIT-on-0.74 build.
 
 ## Reference checkouts (read-only, outside this repo)
 
