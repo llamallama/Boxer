@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2002-2010  The DOSBox Team
+ *  Copyright (C) 2002-2019  The DOSBox Team
  *
  *  This program is free software; you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -11,9 +11,9 @@
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
  *
- *  You should have received a copy of the GNU General Public License
- *  along with this program; if not, write to the Free Software
- *  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+ *  You should have received a copy of the GNU General Public License along
+ *  with this program; if not, write to the Free Software Foundation, Inc.,
+ *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
 
@@ -53,7 +53,7 @@ public:
 		CacheBlockDynRec * to;		// this block can transfer control to the to-block
 		CacheBlockDynRec * next;
 		CacheBlockDynRec * from;	// the from-block can transfer control to this block
-	} link[2];	// maximal two links (conditional jumps)
+	} link[2];	// maximum two links (conditional jumps)
 	CacheBlockDynRec * crossblock;
 };
 
@@ -96,7 +96,7 @@ public:
 		old_pagehandler=_old_pagehandler;
 
 		// adjust flags
-		flags=old_pagehandler->flags|PFLAG_HASCODE;
+		flags=old_pagehandler->flags|(cpu.code.big ? PFLAG_HASCODE32:PFLAG_HASCODE16);
 		flags&=~PFLAG_WRITEABLE;
 
 		active_blocks=0;
@@ -205,7 +205,7 @@ public:
 		addr&=4095;
 		if (host_readb(hostmem+addr)==(Bit8u)val) return false;
 		// see if there's code where we are writing to
-		if (!write_map[addr]) {
+		if (!host_readb(&write_map[addr])) {
 			if (!active_blocks) {
 				// no blocks left in this page, still delay the page releasing a bit
 				active_count--;
@@ -372,11 +372,11 @@ public:
 		return 0;	// none found
 	}
 
-	HostPt GetHostReadPt(Bitu phys_page) { 
+	HostPt GetHostReadPt(Bitu phys_page) {
 		hostmem=old_pagehandler->GetHostReadPt(phys_page);
 		return hostmem;
 	}
-	HostPt GetHostWritePt(Bitu phys_page) { 
+	HostPt GetHostWritePt(Bitu phys_page) {
 		return GetHostReadPt( phys_page );
 	}
 public:
@@ -392,7 +392,7 @@ private:
 
 	Bitu active_blocks;		// the number of cache blocks in this page
 	Bitu active_count;		// delaying parameter to not immediately release a page
-	HostPt hostmem;	
+	HostPt hostmem;
 	Bitu phys_page;
 };
 
@@ -433,13 +433,13 @@ void CacheBlockDynRec::Clear(void) {
 				wherelink = &(*wherelink)->link[ind].next;
 			}
 			// now remove the link
-			if(*wherelink) 
+			if(*wherelink)
 				*wherelink = (*wherelink)->link[ind].next;
 			else {
 				LOG(LOG_CPU,LOG_ERROR)("Cache anomaly. please investigate");
 			}
 		}
-	} else 
+	} else
 		cache_addunusedblock(this);
 	if (crossblock) {
 		// clear out the crossblock (in the page before) as well
@@ -464,7 +464,7 @@ static CacheBlockDynRec * cache_openblock(void) {
 	// check for enough space in this block
 	Bitu size=block->cache.size;
 	CacheBlockDynRec * nextblock=block->cache.next;
-	if (block->page.handler) 
+	if (block->page.handler)
 		block->Clear();
 	// block size must be at least CACHE_MAXSIZE
 	while (size<CACHE_MAXSIZE) {
@@ -473,7 +473,7 @@ static CacheBlockDynRec * cache_openblock(void) {
 		// merge blocks
 		size+=nextblock->cache.size;
 		CacheBlockDynRec * tempblock=nextblock->cache.next;
-		if (nextblock->page.handler) 
+		if (nextblock->page.handler)
 			nextblock->Clear();
 		// block is free now
 		cache_addunusedblock(nextblock);
@@ -500,8 +500,8 @@ static void cache_closeblock(void) {
 	Bitu written=(Bitu)(cache.pos-block->cache.start);
 	if (written>block->cache.size) {
 		if (!block->cache.next) {
-			if (written>block->cache.size+CACHE_MAXSIZE) E_Exit("CacheBlock overrun 1 %d",written-block->cache.size);	
-		} else E_Exit("CacheBlock overrun 2 written %d size %d",written,block->cache.size);	
+			if (written>block->cache.size+CACHE_MAXSIZE) E_Exit("CacheBlock overrun 1 %d",written-block->cache.size);
+		} else E_Exit("CacheBlock overrun 2 written %d size %d",written,block->cache.size);
 	} else {
 		Bitu new_size;
 		Bitu left=block->cache.size-written;
@@ -560,7 +560,7 @@ static void cache_block_closing(Bit8u* block_start,Bitu block_size);
 /* Define temporary pagesize so the MPROTECT case and the regular case share as much code as possible */
 #if (C_HAVE_MPROTECT)
 #define PAGESIZE_TEMP PAGESIZE
-#else 
+#else
 #define PAGESIZE_TEMP 4096
 #endif
 
@@ -598,14 +598,14 @@ static void cache_init(bool enable) {
 			if(!cache_code_start_ptr) E_Exit("Allocating dynamic cache failed");
 
 			// align the cache at a page boundary
-			cache_code=(Bit8u*)(((long)cache_code_start_ptr + PAGESIZE_TEMP-1) & ~(PAGESIZE_TEMP-1)); //MEM LEAK. store old pointer if you want to free it.
+			cache_code=(Bit8u*)(((Bitu)cache_code_start_ptr + PAGESIZE_TEMP-1) & ~(PAGESIZE_TEMP-1));//Bitu is same size as a pointer.
 
 			cache_code_link_blocks=cache_code;
 			cache_code=cache_code+PAGESIZE_TEMP;
 
 #if (C_HAVE_MPROTECT)
 			if(mprotect(cache_code_link_blocks,CACHE_TOTAL+CACHE_MAXSIZE+PAGESIZE_TEMP,PROT_WRITE|PROT_READ|PROT_EXEC))
-				LOG_MSG("Setting excute permission on the code cache has failed");
+				LOG_MSG("Setting execute permission on the code cache has failed");
 #endif
 			CacheBlockDynRec * block=cache_getblock();
 			cache.block.first=block;

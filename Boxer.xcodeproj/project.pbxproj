@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		839459D02FAAE05500B18028 /* fmopl.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 839459C62FAAE05400B18028 /* fmopl.cpp */; };
+		839459D12FAAE05500B18028 /* saa1099.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 839459C82FAAE05400B18028 /* saa1099.cpp */; };
+		839459D22FAAE05500B18028 /* sn76496.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 839459CA2FAAE05400B18028 /* sn76496.cpp */; };
+		839459D32FAAE05500B18028 /* ymdeltat.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 839459CC2FAAE05400B18028 /* ymdeltat.cpp */; };
+		839459D42FAAE05500B18028 /* ymf262.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 839459CE2FAAE05500B18028 /* ymf262.cpp */; };
+		839459D62FAAE08000B18028 /* drive_overlay.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 839459D52FAAE08000B18028 /* drive_overlay.cpp */; };
 		8D11072D0486CEB800E47090 /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 29B97316FDCFA39411CA2CEA /* main.m */; settings = {ATTRIBUTES = (); }; };
 		8D11072F0486CEB800E47090 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1058C7A1FEA54F0111CA2CBB /* Cocoa.framework */; };
 		9F0102E01440543500942713 /* MT32ShelfHighlight.png in Resources */ = {isa = PBXBuildFile; fileRef = 9F0102DF1440543500942713 /* MT32ShelfHighlight.png */; };
@@ -482,6 +488,21 @@
 		29B97316FDCFA39411CA2CEA /* main.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		29B97324FDCFA39411CA2CEA /* AppKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AppKit.framework; path = /System/Library/Frameworks/AppKit.framework; sourceTree = "<absolute>"; };
 		29B97325FDCFA39411CA2CEA /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = /System/Library/Frameworks/Foundation.framework; sourceTree = "<absolute>"; };
+		831851CB2FBAC0C30087239A /* risc_ppc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = risc_ppc.h; sourceTree = "<group>"; };
+		839459C52FAAE05400B18028 /* emu.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = emu.h; sourceTree = "<group>"; };
+		839459C62FAAE05400B18028 /* fmopl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = fmopl.cpp; sourceTree = "<group>"; };
+		839459C72FAAE05400B18028 /* fmopl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = fmopl.h; sourceTree = "<group>"; };
+		839459C82FAAE05400B18028 /* saa1099.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = saa1099.cpp; sourceTree = "<group>"; };
+		839459C92FAAE05400B18028 /* saa1099.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = saa1099.h; sourceTree = "<group>"; };
+		839459CA2FAAE05400B18028 /* sn76496.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = sn76496.cpp; sourceTree = "<group>"; };
+		839459CB2FAAE05400B18028 /* sn76496.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sn76496.h; sourceTree = "<group>"; };
+		839459CC2FAAE05400B18028 /* ymdeltat.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ymdeltat.cpp; sourceTree = "<group>"; };
+		839459CD2FAAE05500B18028 /* ymdeltat.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ymdeltat.h; sourceTree = "<group>"; };
+		839459CE2FAAE05500B18028 /* ymf262.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ymf262.cpp; sourceTree = "<group>"; };
+		839459CF2FAAE05500B18028 /* ymf262.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ymf262.h; sourceTree = "<group>"; };
+		839459D52FAAE08000B18028 /* drive_overlay.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = drive_overlay.cpp; sourceTree = "<group>"; };
+		839459D72FAAE0A800B18028 /* midi.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = midi.h; sourceTree = "<group>"; };
+		839459D82FAAE0A800B18028 /* pci_bus.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = pci_bus.h; sourceTree = "<group>"; };
 		8D1107320486CEB800E47090 /* Boxer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Boxer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9F0102DF1440543500942713 /* MT32ShelfHighlight.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = MT32ShelfHighlight.png; sourceTree = "<group>"; };
 		9F0102E11440561E00942713 /* MT32Shelf.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = MT32Shelf.jpg; sourceTree = "<group>"; };
@@ -1429,6 +1450,24 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		839459C42FAAE05400B18028 /* mame */ = {
+			isa = PBXGroup;
+			children = (
+				839459C52FAAE05400B18028 /* emu.h */,
+				839459C62FAAE05400B18028 /* fmopl.cpp */,
+				839459C72FAAE05400B18028 /* fmopl.h */,
+				839459C82FAAE05400B18028 /* saa1099.cpp */,
+				839459C92FAAE05400B18028 /* saa1099.h */,
+				839459CA2FAAE05400B18028 /* sn76496.cpp */,
+				839459CB2FAAE05400B18028 /* sn76496.h */,
+				839459CC2FAAE05400B18028 /* ymdeltat.cpp */,
+				839459CD2FAAE05500B18028 /* ymdeltat.h */,
+				839459CE2FAAE05500B18028 /* ymf262.cpp */,
+				839459CF2FAAE05500B18028 /* ymf262.h */,
+			);
+			path = mame;
+			sourceTree = "<group>";
+		};
 		9F0F2B9712AD464800CD7078 /* Operations */ = {
 			isa = PBXGroup;
 			children = (
@@ -1797,6 +1836,8 @@
 		9F77207312B38C4400072AE8 /* include */ = {
 			isa = PBXGroup;
 			children = (
+				839459D72FAAE0A800B18028 /* midi.h */,
+				839459D82FAAE0A800B18028 /* pci_bus.h */,
 				9F77207412B38C4400072AE8 /* bios.h */,
 				9F77207512B38C4400072AE8 /* bios_disk.h */,
 				9F77207612B38C4400072AE8 /* callback.h */,
@@ -1902,6 +1943,7 @@
 		9F7720A912B38C4400072AE8 /* core_dynrec */ = {
 			isa = PBXGroup;
 			children = (
+				831851CB2FBAC0C30087239A /* risc_ppc.h */,
 				9F7720AA12B38C4400072AE8 /* cache.h */,
 				9F7720AB12B38C4400072AE8 /* decoder.h */,
 				9F7720AC12B38C4400072AE8 /* decoder_basic.h */,
@@ -1968,6 +2010,7 @@
 		9F7720DF12B38C4400072AE8 /* dos */ = {
 			isa = PBXGroup;
 			children = (
+				839459D52FAAE08000B18028 /* drive_overlay.cpp */,
 				9F7720E012B38C4400072AE8 /* cdrom.cpp */,
 				9F7720E112B38C4400072AE8 /* cdrom.h */,
 				9F7720E212B38C4400072AE8 /* cdrom_aspi_win32.cpp */,
@@ -2045,6 +2088,7 @@
 		9F77211B12B38C4400072AE8 /* hardware */ = {
 			isa = PBXGroup;
 			children = (
+				839459C42FAAE05400B18028 /* mame */,
 				9F77211C12B38C4400072AE8 /* adlib.cpp */,
 				9F77211D12B38C4400072AE8 /* adlib.h */,
 				9F77211E12B38C4400072AE8 /* cmos.cpp */,
@@ -3192,6 +3236,12 @@
 				9F9DF415153B058200233968 /* BXKeyBuffer.mm in Sources */,
 				9F887105156F85F9006CDB5F /* BXFileTypes.m in Sources */,
 				9FF01AF815A4CC2C0087D63D /* NSKeyedArchiver+BXArchivingAdditions.m in Sources */,
+				839459D02FAAE05500B18028 /* fmopl.cpp in Sources */,
+				839459D12FAAE05500B18028 /* saa1099.cpp in Sources */,
+				839459D22FAAE05500B18028 /* sn76496.cpp in Sources */,
+				839459D32FAAE05500B18028 /* ymdeltat.cpp in Sources */,
+				839459D42FAAE05500B18028 /* ymf262.cpp in Sources */,
+				839459D62FAAE08000B18028 /* drive_overlay.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
